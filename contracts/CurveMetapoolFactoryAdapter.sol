@@ -1,4 +1,11 @@
-import { IAdapter } from "@optyfi/defi-legos/interfaces/defiAdapters/contracts/IAdapter.sol";
-import { IAdapterInvestLimit } from "@optyfi/defi-legos/interfaces/defiAdapters/contracts/IAdapterInvestLimit.sol";
+// SPDX-License-Identifier:MIT
+pragma solidity =0.8.11;
 
-contract CurveStableSwapAdapter is IAdapter, IAdapterInvestLimit {}
+//  helper contracts
+import "./utils/AdapterInvestLimitBase.sol";
+// interfaces
+import { IAdapter } from "@optyfi/defi-legos/interfaces/defiAdapters/contracts/IAdapter.sol";
+
+contract CurveStableSwapAdapter is AdapterInvestLimitBase {
+    constructor(address _registry) AdapterModifiersBase(_registry) {}
+}
