@@ -104,6 +104,7 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
 
     /**
      * @notice set the wrapped token address only by operator
+     * @dev Only operator can access this function
      * @param _tokens list of token contract address
      * @param _isWrapped whether the token is wrapped or not
      */
@@ -118,6 +119,7 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
 
     /**
      * @notice assign token index per liquidity pool
+     * @dev Only operator can access this function
      * @param _pools address of the liquidity pool
      * @param _tokens address of the input tokens
      * @param _indexes index of the input token
@@ -128,7 +130,7 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
         int128[] memory _indexes
     ) external onlyOperator {
         uint256 _nPools = _pools.length;
-        require(_pools.length == _tokens.length && _tokens.length == _indexes.length, "!length");
+        require(_nPools == _tokens.length && _nPools == _indexes.length, "!length");
         for (uint256 _i; _i < _nPools; _i++) {
             require(_pools[_i].isContract(), "!isContract");
             require(_tokens[_i].isContract(), "!isContract");
@@ -138,6 +140,7 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
 
     /**
      * @notice lists the tokens that does not accept zero allowance
+     * @dev Only operator can access this function
      * @param _tokens address of the tokens
      * @param _noZeroAllowanceAllowed whether token allows zero allowance or not
      */
@@ -153,6 +156,12 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
         }
     }
 
+    /**
+     * @notice Set the pools where amount is not same for underlying or wrapped asset withdrawals
+     * @dev Only operator can access this function
+     * @param _pools the list of pool addresses
+     * @param _calcWithdrawOneCoinNotSame whether pools calculate wrapped/unwrapped asset withdrawals differently
+     */
     function setCalcWithdrawOneCoinNotSame(address[] memory _pools, bool[] memory _calcWithdrawOneCoinNotSame)
         external
         onlyOperator
@@ -167,7 +176,7 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
     /**
      * @inheritdoc IAdapter
      */
-    function getPoolValue(address _liquidityPool, address) public view returns (uint256) {
+    function getPoolValue(address _liquidityPool, address) public view override returns (uint256) {
         uint256 _virtualPrice = ICurve2Swap(_liquidityPool).get_virtual_price();
         uint256 _totalSupply = ERC20(_getLiquidityPoolToken(_liquidityPool)).totalSupply();
         // the pool value will be in USD for US dollar stablecoin pools
@@ -183,7 +192,7 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
         address _underlyingToken,
         address _liquidityPool,
         uint256 _amount
-    ) external view returns (bytes[] memory _codes) {
+    ) external view override returns (bytes[] memory _codes) {
         return _getDepositCode(_underlyingToken, _liquidityPool, _amount);
     }
 
@@ -194,7 +203,7 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
         address payable _vault,
         address _underlyingToken,
         address _liquidityPool
-    ) external view returns (bytes[] memory _codes) {
+    ) external view override returns (bytes[] memory _codes) {
         uint256 _amount = ERC20(_underlyingToken).balanceOf(_vault);
         return _getDepositCode(_underlyingToken, _liquidityPool, _amount);
     }
@@ -207,7 +216,7 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
         address _underlyingToken,
         address _liquidityPool,
         uint256 _amount
-    ) public view returns (bytes[] memory _codes) {
+    ) public view override returns (bytes[] memory _codes) {
         if (_amount > 0) {
             address _liquidityPoolToken = getLiquidityPoolToken(address(0), _liquidityPool);
 
@@ -241,9 +250,14 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
         address payable _vault,
         address _underlyingToken,
         address _liquidityPool
-    ) external view returns (bytes[] memory _codes) {
-        uint256 _amount = getLiquidityPoolTokenBalance(_vault, _underlyingToken, _liquidityPool);
-        return getWithdrawSomeCodes(_vault, _underlyingToken, _liquidityPool, _amount);
+    ) external view override returns (bytes[] memory _codes) {
+        return
+            getWithdrawSomeCodes(
+                _vault,
+                _underlyingToken,
+                _liquidityPool,
+                getLiquidityPoolTokenBalance(_vault, _underlyingToken, _liquidityPool)
+            );
     }
 
     /**
@@ -259,6 +273,7 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
     function getUnderlyingTokens(address _liquidityPool, address)
         external
         view
+        override
         returns (address[] memory _underlyingTokens)
     {
         address[8] memory _underlyingCoins = underlyingCoins[_liquidityPool];
@@ -276,7 +291,14 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
         address payable _vault,
         address _underlyingToken,
         address _liquidityPool
-    ) external view returns (uint256) {}
+    ) public view override returns (uint256) {
+        return
+            getSomeAmountInToken(
+                _underlyingToken,
+                _liquidityPool,
+                getLiquidityPoolTokenBalance(_vault, _underlyingToken, _liquidityPool)
+            );
+    }
 
     /**
      * @inheritdoc IAdapter
@@ -285,7 +307,7 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
         address payable _vault,
         address,
         address _liquidityPool
-    ) public view returns (uint256) {
+    ) public view override returns (uint256) {
         return ERC20(getLiquidityPoolToken(address(0), _liquidityPool)).balanceOf(_vault);
     }
 
@@ -296,7 +318,7 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
         address _underlyingToken,
         address _liquidityPool,
         uint256 _liquidityPoolTokenAmount
-    ) public view returns (uint256) {
+    ) public view override returns (uint256) {
         if (_liquidityPoolTokenAmount > 0) {
             return
                 calcWithdrawOneCoinNotSame[_liquidityPool]
@@ -320,7 +342,14 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
         address _underlyingToken,
         address _liquidityPool,
         uint256 _underlyingTokenAmount
-    ) external view returns (uint256) {}
+    ) external view override returns (uint256) {
+        if (_underlyingTokenAmount > 0) {
+            uint256 _virtualPrice = ICurve2Swap(_liquidityPool).get_virtual_price();
+            uint256 _decimals = ERC20(_underlyingToken).decimals();
+            return (10**18 * _underlyingTokenAmount * 10**(18 - _decimals)) / _virtualPrice;
+        }
+        return uint256(0);
+    }
 
     /**
      * @inheritdoc IAdapter
@@ -330,7 +359,12 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
         address _underlyingToken,
         address _liquidityPool,
         uint256 _redeemAmount
-    ) external view returns (uint256 _amount) {}
+    ) external view override returns (uint256 _amount) {
+        uint256 _liquidityPoolTokenBalance = getLiquidityPoolTokenBalance(_vault, _underlyingToken, _liquidityPool);
+        uint256 _balanceInToken = getAllAmountInToken(_vault, _underlyingToken, _liquidityPool);
+        // can have unintentional rounding errors
+        return ((_liquidityPoolTokenBalance * _redeemAmount) / _balanceInToken) + 1;
+    }
 
     /**
      * @inheritdoc IAdapter
@@ -340,19 +374,22 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
         address _underlyingToken,
         address _liquidityPool,
         uint256 _redeemAmount
-    ) external view returns (bool) {}
+    ) external view override returns (bool) {
+        uint256 _balanceInToken = getAllAmountInToken(_vault, _underlyingToken, _liquidityPool);
+        return _balanceInToken >= _redeemAmount;
+    }
 
     /**
      * @inheritdoc IAdapter
      */
-    function getRewardToken(address) external pure returns (address) {
+    function getRewardToken(address) external pure override returns (address) {
         return address(0);
     }
 
     /**
      * @inheritdoc IAdapter
      */
-    function canStake(address) external pure returns (bool) {
+    function canStake(address) external pure override returns (bool) {
         return false;
     }
 
