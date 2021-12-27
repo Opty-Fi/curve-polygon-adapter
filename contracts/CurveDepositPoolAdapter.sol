@@ -1,3 +1,4 @@
+/* solhint-disable no-unused-vars*/
 // SPDX-License-Identifier:MIT
 pragma solidity =0.8.11;
 
@@ -521,6 +522,7 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
     }
 }
 
+// solhint-disable func-name-mixedcase
 interface ICurveXSwap {
     function calc_withdraw_one_coin(
         uint256 _liquidityPoolTokenAmount,
@@ -528,3 +530,5 @@ interface ICurveXSwap {
         bool _useUnderlying
     ) external view returns (uint256);
 }
+
+// solhint-enable func-name-mixedcase
