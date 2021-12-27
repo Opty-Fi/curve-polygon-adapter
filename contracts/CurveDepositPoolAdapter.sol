@@ -22,6 +22,8 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
     /**@notice Curve aPool for use on Polygon */
     address public constant aPool = address(0x445FE580eF8d70FF569aB36e80c647af338db351);
 
+    address public constant aBTCPool = address(0xC2d95EEF97Ec6C17551d45e77B590dc1F9117C67);
+
     /**@notice amDAI (Aave Matic Market DAI) address */
     address public constant amDAI = address(0x27F8D03b3a2196956ED754baDc28D73be8830A6e);
 
@@ -31,6 +33,9 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
     /**@notice amUSDT (Aave Matic Market USDT) address */
     address public constant amUSDT = address(0x60D55F02A771d515e077c9C2403a1ef324885CeC);
 
+    /**@notice amWBTC (Aave Matic Market WBTC) address */
+    address public constant amWBTC = address(0x5c2ed810328349100A66B82b78a1791B101C9D61);
+
     /**@notice PoS DAI stable coin address */
     address public constant DAI = address(0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063);
 
@@ -39,6 +44,12 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
 
     /**@notice PoS Tether USD address */
     address public constant USDT = address(0xc2132D05D31c914a87C6611C10748AEb04B58e8F);
+
+    /**@notice PoS Wrapped BTC address */
+    address public constant WBTC = address(0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6);
+
+    /**@notice renBTC address */
+    address public constant renBTC = address(0xDBf31dF14B66535aF65AaC99C32e9eA844e14501);
 
     /**@dev input token index per pool*/
     mapping(address => mapping(address => int128)) public tokenIndexes;
@@ -62,6 +73,7 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
     mapping(address => bool) public calcWithdrawOneCoinNotSame;
 
     constructor(address _registry) AdapterModifiersBase(_registry) {
+        // aPool
         wrappedTokens[amDAI] = true;
         wrappedTokens[amUSDC] = true;
         wrappedTokens[amUSDT] = true;
@@ -78,6 +90,16 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
         underlyingCoins[aPool][0] = DAI;
         underlyingCoins[aPool][1] = USDC;
         underlyingCoins[aPool][2] = USDT;
+        // aBTCPool
+        wrappedTokens[amWBTC] = true;
+        tokenIndexes[aBTCPool][amWBTC] = int128(0);
+        tokenIndexes[aBTCPool][WBTC] = int128(0);
+        tokenIndexes[aBTCPool][renBTC] = int128(1);
+        nTokens[aBTCPool] = uint256(2);
+        coins[aBTCPool][0] = amWBTC;
+        coins[aBTCPool][1] = renBTC;
+        underlyingCoins[aBTCPool][0] = WBTC;
+        underlyingCoins[aBTCPool][1] = renBTC;
     }
 
     /**
