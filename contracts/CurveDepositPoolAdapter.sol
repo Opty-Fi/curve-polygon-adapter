@@ -7,7 +7,8 @@ import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 // interfaces
 import { IAdapter } from "@optyfi/defi-legos/interfaces/defiAdapters/contracts/IAdapter.sol";
-import { ICurveSwap } from "@optyfi/defi-legos/polygon/curve/contracts/ICurveSwap.sol";
+import { ICurve2Swap } from "@optyfi/defi-legos/polygon/curve/contracts/ICurve2Swap.sol";
+import { ICurve3Swap } from "@optyfi/defi-legos/polygon/curve/contracts/ICurve3Swap.sol";
 
 /**
  * @title Adapter for Curve StableSwap pools on polygon
@@ -40,7 +41,7 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
     address public constant USDT = address(0xc2132D05D31c914a87C6611C10748AEb04B58e8F);
 
     /**@dev input token index per pool*/
-    mapping(address => mapping(address => int128)) public tokenIdexes;
+    mapping(address => mapping(address => int128)) public tokenIndexes;
 
     /**@dev assign number of input tokens per pool */
     mapping(address => uint256) public nTokens;
@@ -57,16 +58,19 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
     /**@dev list of tokens that cannot accept zero allowance*/
     mapping(address => bool) public noZeroAllowanceAllowed;
 
+    /**@dev list of pools where amount is not same for underlying or wrapped asset withdrawals*/
+    mapping(address => bool) public calcWithdrawOneCoinNotSame;
+
     constructor(address _registry) AdapterModifiersBase(_registry) {
         wrappedTokens[amDAI] = true;
         wrappedTokens[amUSDC] = true;
         wrappedTokens[amUSDT] = true;
-        tokenIdexes[aPool][DAI] = int128(0);
-        tokenIdexes[aPool][amDAI] = int128(0);
-        tokenIdexes[aPool][USDC] = int128(1);
-        tokenIdexes[aPool][amUSDC] = int128(1);
-        tokenIdexes[aPool][USDT] = int128(2);
-        tokenIdexes[aPool][amUSDT] = int128(2);
+        tokenIndexes[aPool][DAI] = int128(0);
+        tokenIndexes[aPool][amDAI] = int128(0);
+        tokenIndexes[aPool][USDC] = int128(1);
+        tokenIndexes[aPool][amUSDC] = int128(1);
+        tokenIndexes[aPool][USDT] = int128(2);
+        tokenIndexes[aPool][amUSDT] = int128(2);
         nTokens[aPool] = uint256(3);
         coins[aPool][0] = amDAI;
         coins[aPool][1] = amUSDC;
@@ -106,10 +110,15 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
         for (uint256 _i; _i < _nPools; _i++) {
             require(_pools[_i].isContract(), "!isContract");
             require(_tokens[_i].isContract(), "!isContract");
-            tokenIdexes[_pools[_i]][_tokens[_i]] = _indexes[_i];
+            tokenIndexes[_pools[_i]][_tokens[_i]] = _indexes[_i];
         }
     }
 
+    /**
+     * @notice lists the tokens that does not accept zero allowance
+     * @param _tokens address of the tokens
+     * @param _noZeroAllowanceAllowed whether token allows zero allowance or not
+     */
     function setNoZeroAllowanceAllowed(address[] memory _tokens, bool[] memory _noZeroAllowanceAllowed)
         external
         onlyOperator
@@ -122,11 +131,22 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
         }
     }
 
+    function setCalcWithdrawOneCoinNotSame(address[] memory _pools, bool[] memory _calcWithdrawOneCoinNotSame)
+        external
+        onlyOperator
+    {
+        uint256 _nPools = _pools.length;
+        require(_nPools == _calcWithdrawOneCoinNotSame.length, "!length");
+        for (uint256 _i; _i < _nPools; _i++) {
+            calcWithdrawOneCoinNotSame[_pools[_i]] = _calcWithdrawOneCoinNotSame[_i];
+        }
+    }
+
     /**
      * @inheritdoc IAdapter
      */
-    function getPoolValue(address _liquidityPool, address _underlyingToken) public view returns (uint256) {
-        uint256 _virtualPrice = ICurveSwap(_liquidityPool).get_virtual_price();
+    function getPoolValue(address _liquidityPool, address) public view returns (uint256) {
+        uint256 _virtualPrice = ICurve2Swap(_liquidityPool).get_virtual_price();
         uint256 _totalSupply = ERC20(_getLiquidityPoolToken(_liquidityPool)).totalSupply();
         // the pool value will be in USD for US dollar stablecoin pools
         // the pool value will be in BTC for BTC pools
@@ -137,11 +157,13 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
      * @inheritdoc IAdapter
      */
     function getDepositSomeCodes(
-        address payable _vault,
+        address payable,
         address _underlyingToken,
         address _liquidityPool,
         uint256 _amount
-    ) external view returns (bytes[] memory _codes) {}
+    ) external view returns (bytes[] memory _codes) {
+        return _getDepositCode(_underlyingToken, _liquidityPool, _amount);
+    }
 
     /**
      * @inheritdoc IAdapter
@@ -150,17 +172,45 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
         address payable _vault,
         address _underlyingToken,
         address _liquidityPool
-    ) external view returns (bytes[] memory _codes) {}
+    ) external view returns (bytes[] memory _codes) {
+        uint256 _amount = ERC20(_underlyingToken).balanceOf(_vault);
+        return _getDepositCode(_underlyingToken, _liquidityPool, _amount);
+    }
 
     /**
      * @inheritdoc IAdapter
      */
     function getWithdrawSomeCodes(
-        address payable _vault,
+        address payable,
         address _underlyingToken,
         address _liquidityPool,
         uint256 _amount
-    ) external view returns (bytes[] memory _codes) {}
+    ) public view returns (bytes[] memory _codes) {
+        if (_amount > 0) {
+            address _liquidityPoolToken = getLiquidityPoolToken(address(0), _liquidityPool);
+
+            _codes = new bytes[](3);
+            _codes[0] = abi.encode(
+                _liquidityPoolToken,
+                abi.encodeCall(ERC20(_liquidityPool).approve, (_liquidityPool, uint256(0)))
+            );
+            _codes[1] = abi.encode(
+                _liquidityPoolToken,
+                abi.encodeCall(ERC20(_liquidityPool).approve, (_liquidityPool, _amount))
+            );
+
+            _codes[2] = abi.encode(
+                _liquidityPool,
+                abi.encodeWithSignature(
+                    "remove_liquidity_one_coin(uint256,int128,uint256,bool)",
+                    _amount,
+                    tokenIndexes[_liquidityPool][_underlyingToken],
+                    (getSomeAmountInToken(_underlyingToken, _liquidityPool, _amount) * 95) / 100,
+                    !wrappedTokens[_underlyingToken]
+                )
+            );
+        }
+    }
 
     /**
      * @inheritdoc IAdapter
@@ -169,21 +219,33 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
         address payable _vault,
         address _underlyingToken,
         address _liquidityPool
-    ) external view returns (bytes[] memory _codes) {}
+    ) external view returns (bytes[] memory _codes) {
+        uint256 _amount = getLiquidityPoolTokenBalance(_vault, _underlyingToken, _liquidityPool);
+        return getWithdrawSomeCodes(_vault, _underlyingToken, _liquidityPool, _amount);
+    }
 
     /**
      * @inheritdoc IAdapter
      */
-    function getLiquidityPoolToken(address _underlyingToken, address _liquidityPool) external view returns (address) {}
+    function getLiquidityPoolToken(address, address _liquidityPool) public view returns (address) {
+        return ICurve2Swap(_liquidityPool).lp_token();
+    }
 
     /**
      * @inheritdoc IAdapter
      */
-    function getUnderlyingTokens(address _liquidityPool, address _liquidityPoolToken)
+    function getUnderlyingTokens(address _liquidityPool, address)
         external
         view
         returns (address[] memory _underlyingTokens)
-    {}
+    {
+        address[8] memory _underlyingCoins = underlyingCoins[_liquidityPool];
+        uint256 _nCoins = nTokens[_liquidityPool];
+        _underlyingTokens = new address[](_nCoins);
+        for (uint256 _i = 0; _i < _nCoins; _i++) {
+            _underlyingTokens[_i] = _underlyingCoins[_i];
+        }
+    }
 
     /**
      * @inheritdoc IAdapter
@@ -199,9 +261,11 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
      */
     function getLiquidityPoolTokenBalance(
         address payable _vault,
-        address _underlyingToken,
+        address,
         address _liquidityPool
-    ) external view returns (uint256) {}
+    ) public view returns (uint256) {
+        return ERC20(getLiquidityPoolToken(address(0), _liquidityPool)).balanceOf(_vault);
+    }
 
     /**
      * @inheritdoc IAdapter
@@ -210,7 +274,22 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
         address _underlyingToken,
         address _liquidityPool,
         uint256 _liquidityPoolTokenAmount
-    ) external view returns (uint256) {}
+    ) public view returns (uint256) {
+        if (_liquidityPoolTokenAmount > 0) {
+            return
+                calcWithdrawOneCoinNotSame[_liquidityPool]
+                    ? ICurveXSwap(_liquidityPool).calc_withdraw_one_coin(
+                        _liquidityPoolTokenAmount,
+                        tokenIndexes[_liquidityPool][_underlyingToken],
+                        !wrappedTokens[_liquidityPool]
+                    )
+                    : ICurve2Swap(_liquidityPool).calc_withdraw_one_coin(
+                        _liquidityPoolTokenAmount,
+                        tokenIndexes[_liquidityPool][_underlyingToken]
+                    );
+        }
+        return 0;
+    }
 
     /**
      * @inheritdoc IAdapter
@@ -244,14 +323,14 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
     /**
      * @inheritdoc IAdapter
      */
-    function getRewardToken(address _liquidityPool) external view returns (address) {
+    function getRewardToken(address) external pure returns (address) {
         return address(0);
     }
 
     /**
      * @inheritdoc IAdapter
      */
-    function canStake(address _liquidityPool) external view returns (bool) {
+    function canStake(address) external pure returns (bool) {
         return false;
     }
 
@@ -261,7 +340,74 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
      * @return address of the liquidity pool token
      */
     function _getLiquidityPoolToken(address _liquidityPool) internal view returns (address) {
-        return ICurveSwap(_liquidityPool).lp_token();
+        return ICurve2Swap(_liquidityPool).lp_token();
+    }
+
+    /**
+     * @dev This functions composes the function calls to deposit asset into deposit pool
+     * @param _underlyingToken address of the underlying asset
+     * @param _liquidityPool liquidity pool address
+     * @param _amount the amount in underlying token
+     * @return _codes bytes array of function calls to be executed from vault
+     * */
+    function _getDepositCode(
+        address _underlyingToken,
+        address _liquidityPool,
+        uint256 _amount
+    ) internal view returns (bytes[] memory _codes) {
+        (
+            uint256 _nCoins,
+            address[8] memory _underlyingTokens,
+            uint256[] memory _amounts,
+            uint256 _codeLength,
+            uint256 _minMintAmount
+        ) = _getDepositCodeConfig(_underlyingToken, _liquidityPool, _amount);
+        if (_codeLength > 1) {
+            _codes = new bytes[](_codeLength);
+            uint256 _j;
+            for (uint256 _i; _i < _nCoins; _i++) {
+                if (_amounts[_i] > 0) {
+                    if (noZeroAllowanceAllowed[_underlyingTokens[_i]]) {
+                        _codes[_j++] = abi.encode(
+                            _underlyingTokens[_i],
+                            abi.encodeCall(ERC20(_underlyingTokens[_i]).approve, (_liquidityPool, _amounts[_i]))
+                        );
+                    } else {
+                        _codes[_j++] = abi.encode(
+                            _underlyingTokens[_i],
+                            abi.encodeCall(ERC20(_underlyingTokens[_i]).approve, (_liquidityPool, uint256(0)))
+                        );
+                        _codes[_j++] = abi.encode(
+                            _underlyingTokens[_i],
+                            abi.encodeCall(ERC20(_underlyingTokens[_i]).approve, (_liquidityPool, _amounts[_i]))
+                        );
+                    }
+                }
+            }
+            if (_nCoins == uint256(2)) {
+                uint256[2] memory _depositAmounts = [_amounts[0], _amounts[1]];
+                _codes[_j] = abi.encode(
+                    _liquidityPool,
+                    abi.encodeWithSignature(
+                        "add_liquidity(uint256[2],uint256,bool)",
+                        _depositAmounts,
+                        _minMintAmount,
+                        !wrappedTokens[_underlyingToken]
+                    )
+                );
+            } else if (_nCoins == uint256(3)) {
+                uint256[3] memory _depositAmounts = [_amounts[0], _amounts[1], _amounts[2]];
+                _codes[_j] = abi.encode(
+                    _liquidityPool,
+                    abi.encodeWithSignature(
+                        "add_liquidity(uint256[3],uint256,bool)",
+                        _depositAmounts,
+                        _minMintAmount,
+                        !wrappedTokens[_underlyingToken]
+                    )
+                );
+            }
+        }
     }
 
     /**
@@ -286,13 +432,12 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
             address[8] memory _underlyingTokens,
             uint256[] memory _amounts,
             uint256 _codeLength,
-            uint256 _minAmount
+            uint256 _minMintAmount
         )
     {
         _nCoins = nTokens[_liquidityPool];
         _underlyingTokens = wrappedTokens[_underlyingToken] ? coins[_liquidityPool] : underlyingCoins[_liquidityPool];
         _amounts = new uint256[](_nCoins);
-        _codeLength = 1;
         for (uint256 _i; _i < _nCoins; _i++) {
             if (_underlyingTokens[_i] == _underlyingToken) {
                 _amounts[_i] = _getDepositAmount(
@@ -301,19 +446,26 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
                     _amount,
                     getPoolValue(_liquidityPool, _underlyingToken)
                 );
-                uint256 _decimals = ERC20(_underlyingToken).decimals();
-                _minAmount =
-                    (_amounts[_i] * 10**(uint256(36) - _decimals) * 95) /
-                    (ICurveSwap(_liquidityPool).get_virtual_price() * 100);
-
                 if (_amounts[_i] > 0) {
+                    uint256 _decimals = ERC20(_underlyingToken).decimals();
+                    _minMintAmount =
+                        (_amounts[_i] * 10**(uint256(36) - _decimals) * 95) /
+                        (ICurve2Swap(_liquidityPool).get_virtual_price() * 100);
                     if (noZeroAllowanceAllowed[_underlyingTokens[_i]]) {
-                        _codeLength++;
+                        _codeLength = 2;
                     } else {
-                        _codeLength += 2;
+                        _codeLength = 3;
                     }
                 }
             }
         }
     }
+}
+
+interface ICurveXSwap {
+    function calc_withdraw_one_coin(
+        uint256 _liquidityPoolTokenAmount,
+        int128 _tokenIndex,
+        bool _useUnderlying
+    ) external view returns (uint256);
 }
