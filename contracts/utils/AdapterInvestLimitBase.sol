@@ -5,6 +5,9 @@ pragma solidity >0.6.0 <0.9.0;
 //  libraries
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 
+// helper contracts
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
 import { AdapterModifiersBase } from "./AdapterModifiersBase.sol";
 
 import "@optyfi/defi-legos/interfaces/defiAdapters/contracts/IAdapterInvestLimit.sol";
@@ -70,5 +73,66 @@ abstract contract AdapterInvestLimitBase is IAdapterInvestLimit, AdapterModifier
     function setMaxDepositProtocolPct(uint256 _maxDepositProtocolPct) public override onlyRiskOperator {
         maxDepositProtocolPct = _maxDepositProtocolPct;
         emit LogMaxDepositProtocolPct(maxDepositProtocolPct, msg.sender);
+    }
+
+    /**
+     * @dev Get the final value of amount in underlying token to be deposited
+     * @param _liquidityPool liquidity pool address
+     * @param _underlyingToken underlying token address
+     * @param _amount amount in underlying token
+     * @param _poolValue pool value
+     * @return amount in underlying token to be deposited affected by investment limitation
+     */
+    function _getDepositAmount(
+        address _liquidityPool,
+        address _underlyingToken,
+        uint256 _amount,
+        uint256 _poolValue
+    ) internal view returns (uint256) {
+        return
+            maxDepositProtocolMode == MaxExposure.Pct
+                ? _getMaxDepositAmountPct(_liquidityPool, _underlyingToken, _amount, _poolValue)
+                : _getMaxDepositAmount(_liquidityPool, _underlyingToken, _amount);
+    }
+
+    /**
+     * @dev Gets the maximum amount in underlying token limited by percentage
+     * @param _liquidityPool liquidity pool address
+     * @param _underlyingToken underlying token address
+     * @param _amount amount in underlying token
+     * @param _poolValue pool value
+     * @return  amount in underlying token to be deposited affected by
+     *          investment limit in percentage
+     */
+    function _getMaxDepositAmountPct(
+        address _liquidityPool,
+        address _underlyingToken,
+        uint256 _amount,
+        uint256 _poolValue
+    ) internal view returns (uint256) {
+        uint256 _poolPct = maxDepositPoolPct[_liquidityPool];
+        uint256 _decimals = ERC20(_underlyingToken).decimals();
+        uint256 _actualAmount = _amount * (10**(uint256(18) - _decimals));
+        uint256 _limit = _poolPct == 0 ? (_poolValue * maxDepositProtocolPct) / 10000 : (_poolValue * _poolPct) / 10000;
+        return _actualAmount > _limit ? _limit / 10**(uint256(18) - _decimals) : _amount;
+    }
+
+    /**
+     * @dev Gets the maximum amount in underlying token affected by investment
+     *      limit set for liquidity pool in amount
+     * @param _liquidityPool liquidity pool address
+     * @param _underlyingToken underlying token address
+     * @param _amount amount in underlying token
+     * @return amount in underlying token to be deposited affected by
+     *         investment limit set for liquidity pool in amount
+     */
+    function _getMaxDepositAmount(
+        address _liquidityPool,
+        address _underlyingToken,
+        uint256 _amount
+    ) internal view returns (uint256) {
+        uint256 _decimals = ERC20(_underlyingToken).decimals();
+        uint256 _maxAmount = maxDepositAmount[_liquidityPool] / (10**(uint256(18) - (_decimals)));
+        return _amount > _maxAmount ? _maxAmount : _amount;
     }
 }
