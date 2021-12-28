@@ -193,7 +193,7 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
         address _underlyingToken,
         address _liquidityPool,
         uint256 _amount
-    ) external view override returns (bytes[] memory _codes) {
+    ) external view override returns (bytes[] memory) {
         return _getDepositCode(_underlyingToken, _liquidityPool, _amount);
     }
 
@@ -204,9 +204,8 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
         address payable _vault,
         address _underlyingToken,
         address _liquidityPool
-    ) external view override returns (bytes[] memory _codes) {
-        uint256 _amount = ERC20(_underlyingToken).balanceOf(_vault);
-        return _getDepositCode(_underlyingToken, _liquidityPool, _amount);
+    ) external view override returns (bytes[] memory) {
+        return _getDepositCode(_underlyingToken, _liquidityPool, ERC20(_underlyingToken).balanceOf(_vault));
     }
 
     /**
