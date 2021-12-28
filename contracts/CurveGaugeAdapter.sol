@@ -11,6 +11,7 @@ import { ICurveGauge } from "@optyfi/defi-legos/polygon/curve/contracts/ICurveGa
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 
 contract CurveGaugeAdapter is AdapterInvestLimitBase, IAdapterV2, IAdapterHarvestRewardV2 {
+    using Address for address;
     /**
      * @notice Uniswap V2 router contract address
      */
@@ -21,8 +22,11 @@ contract CurveGaugeAdapter is AdapterInvestLimitBase, IAdapterV2, IAdapterHarves
     /**@notice am3Crv Gauge */
     address public constant am3CrvGauge = address(0x19793B454D3AfC7b454F206Ffe95aDE26cA6912c);
 
-    /**@notice am3Crv Gauge */
+    /**@notice btcCrv Gauge */
     address public constant btcCrvGauge = address(0xffbACcE0CC7C19d46132f1258FC16CF6871D153c);
+
+    /**@notice tricypto pool Gauge */
+    address public constant crvUSDBTCETHGauge = address(0xb0a366b987d77b5eD5803cBd95C80bB6DEaB48C0);
 
     /**@notice PoS CRV */
     address public constant CRV = address(0x172370d5Cd63279eFa6d502DAB29171933a610AF);
@@ -37,12 +41,18 @@ contract CurveGaugeAdapter is AdapterInvestLimitBase, IAdapterV2, IAdapterHarves
     mapping(address => uint256) public nRewardTokens;
 
     constructor(address _registry) AdapterModifiersBase(_registry) {
+        // am3CrvGauge
         rewardTokens[am3CrvGauge][0] = CRV;
         rewardTokens[am3CrvGauge][1] = WMATIC;
         nRewardTokens[am3CrvGauge] = 2;
+        // btcCrvGauge
         rewardTokens[btcCrvGauge][0] = CRV;
         rewardTokens[btcCrvGauge][1] = WMATIC;
         nRewardTokens[btcCrvGauge] = 2;
+        // crvUSDBTCETHGauge
+        rewardTokens[crvUSDBTCETHGauge][0] = CRV;
+        rewardTokens[crvUSDBTCETHGauge][1] = WMATIC;
+        nRewardTokens[crvUSDBTCETHGauge] = 2;
     }
 
     /**
@@ -60,7 +70,23 @@ contract CurveGaugeAdapter is AdapterInvestLimitBase, IAdapterV2, IAdapterHarves
         uint256 _nGauges = _gauges.length;
         require(_nGauges == _indexes.length && _nGauges == _rewardTokens.length, "!length");
         for (uint256 _i; _i < _nGauges; _i++) {
+            require(_gauges[_i].isContract(), "!isContract");
+            require(_rewardTokens[_i].isContract(), "!isContract");
             rewardTokens[_gauges[_i]][_indexes[_i]] = _rewardTokens[_i];
+        }
+    }
+
+    /**
+     * @notice set number of reward tokens per gauge
+     * @param _gauges list of gauge contract address
+     * @param _nRewardTokens list of total reard tokens per
+     */
+    function setNRewardToken(address[] memory _gauges, uint256[] memory _nRewardTokens) external onlyOperator {
+        uint256 _nGauges = _gauges.length;
+        require(_nGauges == _nRewardTokens.length, "!length");
+        for (uint256 _i; _i < _nGauges; _i++) {
+            require(_gauges[_i].isContract(), "!isContract");
+            nRewardTokens[_gauges[_i]] = _nRewardTokens[_i];
         }
     }
 
@@ -253,6 +279,7 @@ contract CurveGaugeAdapter is AdapterInvestLimitBase, IAdapterV2, IAdapterHarves
         return false;
     }
 
+    /*solhint-disable no-empty-blocks*/
     /**
      * @inheritdoc IAdapterHarvestReward
      */
@@ -271,6 +298,8 @@ contract CurveGaugeAdapter is AdapterInvestLimitBase, IAdapterV2, IAdapterHarves
         address,
         address
     ) external view returns (uint256 _amount) {}
+
+    /*solhint-enable no-empty-blocks*/
 
     /**
      * @inheritdoc IAdapterHarvestReward
@@ -311,6 +340,7 @@ contract CurveGaugeAdapter is AdapterInvestLimitBase, IAdapterV2, IAdapterHarves
         return _getHarvestCodes(_vault, _rewardToken, _underlyingToken, _rewardTokenAmount);
     }
 
+    /*solhint-disable  no-empty-blocks*/
     /**
      * @inheritdoc IAdapterHarvestReward
      */
@@ -320,6 +350,8 @@ contract CurveGaugeAdapter is AdapterInvestLimitBase, IAdapterV2, IAdapterHarves
         override
         returns (bytes[] memory _codes)
     {}
+
+    /*solhint-enable  no-empty-blocks*/
 
     /**
      * @inheritdoc IAdapterHarvestReward
