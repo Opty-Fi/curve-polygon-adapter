@@ -1,23 +1,29 @@
-import { shouldBehaveLikeCurveDepositPoolAdapter } from "./CurveDepositPoolAdapter.behaviour";
+import { shouldBehaveLikeCurveStableSwapAdapter } from "./CurveStableSwapAdapter.behaviour";
 import { shouldBehaveLikeCurveFactoryMetapoolAdapter } from "./CurveFactoryMetapoolAdapter.behaviour";
 import { shouldBehaveLikeCurveGaugeAdapter } from "./CurveGaugeAdapter.behaviour";
 import { shouldBehaveLikeCurveCryptoAdapter } from "./CurveCryptoAdapter.behaviour";
 import CurveAdapterParticulars from "@optyfi/defi-legos/polygon/curve";
 
 const {
-  pools: {
-    CurveCrypto: CurveCryptoPools,
-    CurveDeposit: CurveDepositPools,
-    CurveFactoryMetaPools,
-    CurveGauge: CurveGauges,
-  },
+  CurveStableSwap: { pools: CurveStableSwapPools },
+  CurveATriCryptoSwap: { pools: CurveATriCryptoSwapPools },
+  CurveATriCryptoZap: { pools: CurveATriCryptoZapPools },
+  CurveGauge: { pools: CurveGauges },
+  CurveFactoryMetaPools: { pools: CurveFactoryMetaPools },
 } = CurveAdapterParticulars;
 
-console.log(CurveCryptoPools, CurveDepositPools, CurveFactoryMetaPools, CurveGauges);
-
 describe("Unit tests", function () {
-  describe("CurveDepositPoolAdapter", function () {
-    shouldBehaveLikeCurveDepositPoolAdapter();
+  this.beforeAll(function () {
+    console.log(
+      CurveATriCryptoSwapPools,
+      CurveStableSwapPools,
+      CurveATriCryptoZapPools,
+      CurveFactoryMetaPools,
+      CurveGauges,
+    );
+  });
+  describe("CurveStableSwapAdapter", function () {
+    shouldBehaveLikeCurveStableSwapAdapter();
   });
   describe("CurveFactoryMetaPoolAdapter", function () {
     shouldBehaveLikeCurveFactoryMetapoolAdapter();

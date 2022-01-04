@@ -6,9 +6,9 @@ pragma solidity =0.8.11;
 import "./utils/AdapterInvestLimitBase.sol";
 // interfaces
 import { IAdapter } from "@optyfi/defi-legos/interfaces/defiAdapters/contracts/IAdapter.sol";
-import { ICurve2StableSwap } from "@optyfi/defi-legos/polygon/curve/contracts/ICurve2StableSwap.sol";
-import { ICurve3StableSwap } from "@optyfi/defi-legos/polygon/curve/contracts/ICurve3StableSwap.sol";
-import { ICurve4StableSwap } from "@optyfi/defi-legos/polygon/curve/contracts/ICurve4StableSwap.sol";
+import "@optyfi/defi-legos/polygon/curve/contracts/ICurve2StableSwapMetapoolFactory.sol";
+import "@optyfi/defi-legos/polygon/curve/contracts/ICurve3StableSwapMetapoolFactory.sol";
+import "@optyfi/defi-legos/polygon/curve/contracts/ICurve4StableSwapMetapoolFactory.sol";
 import { ICurveL2Factory } from "@optyfi/defi-legos/polygon/curve/contracts/ICurveL2Factory.sol";
 
 contract CurveStableSwapAdapter is AdapterInvestLimitBase, IAdapter {
@@ -46,7 +46,7 @@ contract CurveStableSwapAdapter is AdapterInvestLimitBase, IAdapter {
      * @inheritdoc IAdapter
      */
     function getPoolValue(address _liquidityPool, address) public view override returns (uint256) {
-        uint256 _virtualPrice = ICurve2StableSwap(_liquidityPool).get_virtual_price();
+        uint256 _virtualPrice = ICurve2StableSwapMetapoolFactory(_liquidityPool).get_virtual_price();
         uint256 _totalSupply = ERC20(_liquidityPool).totalSupply();
         // the pool value will be in USD for US dollar stablecoin pools
         // the pool value will be in BTC for BTC pools
@@ -173,7 +173,7 @@ contract CurveStableSwapAdapter is AdapterInvestLimitBase, IAdapter {
         address,
         address _liquidityPool
     ) public view override returns (uint256) {
-        return ICurve2StableSwap(_liquidityPool).balanceOf(_vault);
+        return ICurve2StableSwapMetapoolFactory(_liquidityPool).balanceOf(_vault);
     }
 
     /**
@@ -186,7 +186,7 @@ contract CurveStableSwapAdapter is AdapterInvestLimitBase, IAdapter {
     ) public view override returns (uint256) {
         if (_liquidityPoolTokenAmount > 0) {
             return
-                ICurve2StableSwap(_liquidityPool).calc_withdraw_one_coin(
+                ICurve2StableSwapMetapoolFactory(_liquidityPool).calc_withdraw_one_coin(
                     _liquidityPoolTokenAmount,
                     _getTokenIndex(_liquidityPool, _underlyingToken)
                 );
@@ -203,7 +203,7 @@ contract CurveStableSwapAdapter is AdapterInvestLimitBase, IAdapter {
         uint256 _underlyingTokenAmount
     ) external view override returns (uint256) {
         if (_underlyingTokenAmount > 0) {
-            uint256 _virtualPrice = ICurve2StableSwap(_liquidityPool).get_virtual_price();
+            uint256 _virtualPrice = ICurve2StableSwapMetapoolFactory(_liquidityPool).get_virtual_price();
             uint256 _decimals = ERC20(_underlyingToken).decimals();
             return (10**18 * _underlyingTokenAmount * 10**(18 - _decimals)) / _virtualPrice;
         }
@@ -326,7 +326,7 @@ contract CurveStableSwapAdapter is AdapterInvestLimitBase, IAdapter {
                 uint256 _decimals = ERC20(_underlyingToken).decimals();
                 _minMintAmount =
                     (_amounts[_i] * 10**(uint256(36) - _decimals) * 95) /
-                    (ICurve2StableSwap(_swapPool).get_virtual_price() * 100);
+                    (ICurve2StableSwapMetapoolFactory(_swapPool).get_virtual_price() * 100);
                 if (_amounts[_i] > 0) {
                     if (noZeroAllowanceAllowed[_underlyingTokens[_i]]) {
                         _codeLength = 2;

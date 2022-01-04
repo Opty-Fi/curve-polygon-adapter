@@ -8,8 +8,8 @@ import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 // interfaces
 import { IAdapter } from "@optyfi/defi-legos/interfaces/defiAdapters/contracts/IAdapter.sol";
-import { ICurve2Swap } from "@optyfi/defi-legos/polygon/curve/contracts/ICurve2Swap.sol";
-import { ICurve3Swap } from "@optyfi/defi-legos/polygon/curve/contracts/ICurve3Swap.sol";
+import { ICurve2StableSwap } from "@optyfi/defi-legos/polygon/curve/contracts/ICurve2StableSwap.sol";
+import { ICurve3StableSwap } from "@optyfi/defi-legos/polygon/curve/contracts/ICurve3StableSwap.sol";
 
 /**
  * @title Adapter for Curve StableSwap pools on polygon
@@ -17,7 +17,7 @@ import { ICurve3Swap } from "@optyfi/defi-legos/polygon/curve/contracts/ICurve3S
  * @dev Abstraction layer to Curve's stableswap pools
  */
 
-contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
+contract CurveStableSwapAdapter is IAdapter, AdapterInvestLimitBase {
     using Address for address;
 
     /**@notice Curve aPool for use on Polygon */
@@ -178,7 +178,7 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
      * @inheritdoc IAdapter
      */
     function getPoolValue(address _liquidityPool, address) public view override returns (uint256) {
-        uint256 _virtualPrice = ICurve2Swap(_liquidityPool).get_virtual_price();
+        uint256 _virtualPrice = ICurve2StableSwap(_liquidityPool).get_virtual_price();
         uint256 _totalSupply = ERC20(_getLiquidityPoolToken(_liquidityPool)).totalSupply();
         // the pool value will be in USD for US dollar stablecoin pools
         // the pool value will be in BTC for BTC pools
@@ -264,7 +264,7 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
      * @inheritdoc IAdapter
      */
     function getLiquidityPoolToken(address, address _liquidityPool) public view returns (address) {
-        return ICurve2Swap(_liquidityPool).lp_token();
+        return ICurve2StableSwap(_liquidityPool).lp_token();
     }
 
     /**
@@ -327,7 +327,7 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
                         tokenIndexes[_liquidityPool][_underlyingToken],
                         !wrappedTokens[_liquidityPool]
                     )
-                    : ICurve2Swap(_liquidityPool).calc_withdraw_one_coin(
+                    : ICurve2StableSwap(_liquidityPool).calc_withdraw_one_coin(
                         _liquidityPoolTokenAmount,
                         tokenIndexes[_liquidityPool][_underlyingToken]
                     );
@@ -344,7 +344,7 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
         uint256 _underlyingTokenAmount
     ) external view override returns (uint256) {
         if (_underlyingTokenAmount > 0) {
-            uint256 _virtualPrice = ICurve2Swap(_liquidityPool).get_virtual_price();
+            uint256 _virtualPrice = ICurve2StableSwap(_liquidityPool).get_virtual_price();
             uint256 _decimals = ERC20(_underlyingToken).decimals();
             return (10**18 * _underlyingTokenAmount * 10**(18 - _decimals)) / _virtualPrice;
         }
@@ -399,7 +399,7 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
      * @return address of the liquidity pool token
      */
     function _getLiquidityPoolToken(address _liquidityPool) internal view returns (address) {
-        return ICurve2Swap(_liquidityPool).lp_token();
+        return ICurve2StableSwap(_liquidityPool).lp_token();
     }
 
     /**
@@ -509,7 +509,7 @@ contract CurveDepositPoolAdapter is IAdapter, AdapterInvestLimitBase {
                     uint256 _decimals = ERC20(_underlyingToken).decimals();
                     _minMintAmount =
                         (_amounts[_i] * 10**(uint256(36) - _decimals) * 95) /
-                        (ICurve2Swap(_liquidityPool).get_virtual_price() * 100);
+                        (ICurve2StableSwap(_liquidityPool).get_virtual_price() * 100);
                     if (noZeroAllowanceAllowed[_underlyingTokens[_i]]) {
                         _codeLength = 2;
                     } else {
