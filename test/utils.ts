@@ -23,8 +23,7 @@ const tokenBalancesSlot = async (token: ERC20) => {
     await setStorageAt(token.address, slot, val);
     const balance = await token.balanceOf(account);
     await setStorageAt(token.address, slot, prev);
-    if (balance.gte(ethers.BigNumber.from(val))) {
-      console.log("slot ", slot);
+    if (balance.eq(ethers.BigNumber.from(val))) {
       return { index: i, isVyper: false };
     }
   }
@@ -61,7 +60,6 @@ export async function setTokenBalanceInStorage(token: ERC20, account: string, am
           .padStart(64, "0"),
     );
   } else {
-    console.log("utils ", (await token.balanceOf(account)).toString());
     return setStorageAt(
       token.address,
       ethers.utils.keccak256(
