@@ -13,9 +13,9 @@ const amWBTC_v3 = CurveCryptoPools.amWBTC_crvUSDBTCETH_3;
 const amWBTC_v1 = CurveCryptoPools.amWBTC_crvUSDCBTCETH_1;
 
 async function main() {
-  const alice = await ethers.getSigner("0");
+  const [alice] = await ethers.getSigners();
   const triCryptoPoolV1 = <ICurveATriCryptoSwapV1>(
-    await ethers.getContractAt("ICurveCryptoV1", "0x751B1e21756bDbc307CBcC5085c042a0e9AaEf36")
+    await ethers.getContractAt("ICurveATriCryptoSwapV1", "0x751B1e21756bDbc307CBcC5085c042a0e9AaEf36")
   );
   // const triCryptoPoolV3 = <ICurveATriCryptoSwapV3>(
   //   await ethers.getContractAt("ICurveCryptoV3", "0x92215849c439E1f8612b6646060B4E3E5ef822cC")
