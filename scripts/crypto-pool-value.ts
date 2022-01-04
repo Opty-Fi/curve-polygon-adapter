@@ -4,6 +4,8 @@ import { ICurveATriCryptoSwapV1 } from "../typechain/ICurveATriCryptoSwapV1";
 // import { ICurveATriCryptoSwapV3 } from "../typechain/ICurveATriCryptoSwapV3";
 import { BigNumber } from "ethers";
 import { setTokenBalanceInStorage } from "../test/utils";
+import { ICurveATriCryptoZap } from "../typechain/ICurveATriCryptoZap";
+import { ERC20 } from "../typechain";
 
 const {
   CurveATriCryptoSwap: { pools: CurveCryptoPools },
@@ -11,31 +13,80 @@ const {
 
 const amWBTC_v3 = CurveCryptoPools.amWBTC_crvUSDBTCETH_3;
 const amWBTC_v1 = CurveCryptoPools.amWBTC_crvUSDCBTCETH_1;
+const atriCryptoZapPool = CurveAdapterParticulars.CurveATriCryptoZap.pools.dai_crvUSDBTCETH;
 
 async function main() {
   const [alice] = await ethers.getSigners();
-  const triCryptoPoolV1 = <ICurveATriCryptoSwapV1>(
+  const triCryptoSwapPoolV1 = <ICurveATriCryptoSwapV1>(
     await ethers.getContractAt("ICurveATriCryptoSwapV1", "0x751B1e21756bDbc307CBcC5085c042a0e9AaEf36")
   );
-  // const triCryptoPoolV3 = <ICurveATriCryptoSwapV3>(
-  //   await ethers.getContractAt("ICurveCryptoV3", "0x92215849c439E1f8612b6646060B4E3E5ef822cC")
+  const atriCryptoZapPoolInstance = <ICurveATriCryptoZap>(
+    await ethers.getContractAt("ICurveATriCryptoZap", atriCryptoZapPool.pool)
+  );
+  const vpV1 = await triCryptoSwapPoolV1.get_virtual_price();
+  const dai = <ERC20>await ethers.getContractAt("ERC20", atriCryptoZapPool.tokens[0]);
+  await setTokenBalanceInStorage(dai, alice.address, "1000");
+  const daifundamount = await dai.balanceOf(alice.address);
+  const v1Expected = daifundamount.mul(BigNumber.from("10").pow(36 - 18)).div(vpV1);
+  await dai.connect(alice).approve(atriCryptoZapPoolInstance.address, daifundamount);
+  await atriCryptoZapPoolInstance.connect(alice)["add_liquidity(uint256[5],uint256)"]([daifundamount, 0, 0, 0, 0], 0);
+  const lpTokenV1 = await ethers.getContractAt("ERC20", await atriCryptoZapPoolInstance.token());
+  console.log("Expected ", v1Expected.toString());
+  console.log("Actual ", (await lpTokenV1.balanceOf(alice.address)).toString());
+  console.log((await dai.balanceOf(alice.address)).toString());
+}
+
+export function cubic_root(x: BigNumber): BigNumber {
+  // # x is taken at base 1e36
+  // # result is at base 1e18
+  // # Will have convergence problems when ETH*BTC is cheaper than 0.01 squared dollar
+  // # (for example, when BTC < $0.1 and ETH < $0.1)
+  let D = x.div(BigNumber.from(10).pow("18"));
+  for (let i = 0; i < 255; i++) {
+    let diff = BigNumber.from("0");
+    const D_prev = D;
+    D = D.mul(
+      BigNumber.from(2)
+        .mul(BigNumber.from(10).pow("18"))
+        .add(x)
+        .div(
+          D.mul(BigNumber.from(10).pow("18"))
+            .div(D.mul(BigNumber.from(10).pow("18")).div(D))
+            .div(BigNumber.from(3).mul(BigNumber.from(10).pow("18"))),
+        ),
+    );
+
+    if (D.gt(D_prev)) {
+      diff = D.sub(D_prev);
+    } else {
+      diff = D_prev.sub(D);
+    }
+    if (diff.lte(1) || diff.mul(BigNumber.from(10).pow("18")).lt(D)) {
+      return D;
+    }
+  }
+  return BigNumber.from("0");
+}
+
+export async function tricrypto_lp_price() {
+  // const triCryptoSwapPoolV1 = <ICurveATriCryptoSwapV1>(
+  //   await ethers.getContractAt("ICurveATriCryptoSwapV1", "0x751B1e21756bDbc307CBcC5085c042a0e9AaEf36")
   // );
-  const vpV1 = await triCryptoPoolV1.get_virtual_price();
-  // const vpV2 = await triCryptoPoolV3.get_virtual_price();
-  const amWBTC = await ethers.getContractAt("ERC20", amWBTC_v3.tokens[0]);
-  await setTokenBalanceInStorage(amWBTC, alice.address, "2");
-  const amWBTCfundAmount = await amWBTC.balanceOf(alice.address);
-  const v1Expected = amWBTCfundAmount.mul(BigNumber.from("10").pow(36 - 8)).div(vpV1);
-  // const v2Expected = amWBTCfundAmount.mul(BigNumber.from("10").pow(36 - 8)).div(vpV2);
-  await amWBTC.connect(alice).approve(triCryptoPoolV1.address, amWBTCfundAmount);
-  console.log(amWBTCfundAmount.toString());
-  await triCryptoPoolV1.connect(alice).add_liquidity(["0", amWBTCfundAmount, 0], 0);
-  const lpTokenV1 = await ethers.getContractAt("ERC20", await triCryptoPoolV1.token());
-  console.log(v1Expected.toString());
-  console.log((await lpTokenV1.balanceOf(alice.address)).toString());
-  console.log((await amWBTC.balanceOf(alice.address)).toString());
-  // await setTokenBalanceInStorage(amWBTC, alice.address, amWBTCfundAmount.toString())
-  // await amWBTC.connect(alice).approve(triCryptoPoolV3.address,amWBTCfundAmount)
+  // const GAMMA0 = 69999999999999;
+  // const A0 = 3645
+  // const DISCOUNT0 = 0;
+  // const vp = await triCryptoSwapPoolV1.virtual_price();
+  // const p1 = await triCryptoSwapPoolV1.price_oracle(0)
+  // const p2 = await triCryptoSwapPoolV1.price_oracle(1)
+  // let max_price = BigNumber.from("3").mul(vp).mul(cubic_root(p1.mul(p2))).div(BigNumber.from(10).pow("18"))
+  // # ((A/A0) * (gamma/gamma0)**2) ** (1/3)
+  // const g = (await triCryptoSwapPoolV1.gamma()).mul(10**18).div(GAMMA0)
+  // const a = (await triCryptoSwapPoolV1.A()).mul(10**18).div(A0)
+  // let discount = max(g**2 / 10**18 * a, 10**34)  // # handle qbrt nonconvergence
+  // # if discount is small, we take an upper bound
+  // discount = cubic_root(discount).mul(DISCOUNT0).div(10**18)
+  // max_price = max_price.sub(max_price.mul(discount).div(10**18)
+  // console.log(max_price)
 }
 
 main().then(console.log).catch(console.error);

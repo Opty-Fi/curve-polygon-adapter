@@ -19,12 +19,11 @@ const tokenBalancesSlot = async (token: ERC20) => {
     let slot = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(["address", "uint256"], [account, i]));
     while (slot.startsWith("0x0")) slot = "0x" + slot.slice(3);
 
-    const prev = await hre.network.provider.send("eth_getStorageAt", [account, slot, "latest"]);
+    const prev = await hre.network.provider.send("eth_getStorageAt", [token.address, slot, "latest"]);
     await setStorageAt(token.address, slot, val);
     const balance = await token.balanceOf(account);
     await setStorageAt(token.address, slot, prev);
-    if (balance.gte(ethers.BigNumber.from(val))) {
-      console.log("slot ", slot);
+    if (balance.eq(ethers.BigNumber.from(val))) {
       return { index: i, isVyper: false };
     }
   }
@@ -33,7 +32,7 @@ const tokenBalancesSlot = async (token: ERC20) => {
     let slot = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(["uint256", "address"], [i, account]));
     while (slot.startsWith("0x0")) slot = "0x" + slot.slice(3);
 
-    const prev = await hre.network.provider.send("eth_getStorageAt", [account, slot, "latest"]);
+    const prev = await hre.network.provider.send("eth_getStorageAt", [token.address, slot, "latest"]);
     await setStorageAt(token.address, slot, val);
     const balance = await token.balanceOf(account);
     await setStorageAt(token.address, slot, prev);
@@ -61,7 +60,6 @@ export async function setTokenBalanceInStorage(token: ERC20, account: string, am
           .padStart(64, "0"),
     );
   } else {
-    console.log("utils ", (await token.balanceOf(account)).toString());
     return setStorageAt(
       token.address,
       ethers.utils.keccak256(
