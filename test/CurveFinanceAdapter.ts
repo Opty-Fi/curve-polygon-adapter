@@ -1,8 +1,9 @@
+import CurveAdapterParticulars from "@optyfi/defi-legos/polygon/curve";
 import { shouldBehaveLikeCurveStableSwapAdapter } from "./CurveStableSwapAdapter.behaviour";
 import { shouldBehaveLikeCurveFactoryMetapoolAdapter } from "./CurveFactoryMetapoolAdapter.behaviour";
 import { shouldBehaveLikeCurveGaugeAdapter } from "./CurveGaugeAdapter.behaviour";
-import { shouldBehaveLikeCurveCryptoAdapter } from "./CurveCryptoAdapter.behaviour";
-import CurveAdapterParticulars from "@optyfi/defi-legos/polygon/curve";
+import { shouldBehaveLikeCurveCryptoSwapAdapter } from "./CurveCryptoSwapAdapter.behaviour";
+import { shouldBehaveLikeCurveCryptoZapAdapter } from "./CurveCryptoZapAdapter.behaviour";
 
 const {
   CurveStableSwap: { pools: CurveStableSwapPools },
@@ -31,7 +32,10 @@ describe("Unit tests", function () {
   describe("CurveGaugeAdapter", function () {
     shouldBehaveLikeCurveGaugeAdapter();
   });
-  describe("CurveCryptoAdapter", function () {
-    shouldBehaveLikeCurveCryptoAdapter();
+  describe("CurveCryptoSwapAdapter", function () {
+    shouldBehaveLikeCurveCryptoSwapAdapter();
+  });
+  describe("CurveCryptoZapAdapter", function () {
+    shouldBehaveLikeCurveCryptoZapAdapter();
   });
 });
