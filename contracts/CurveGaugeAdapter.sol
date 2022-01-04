@@ -101,7 +101,7 @@ contract CurveGaugeAdapter is AdapterInvestLimitBase, IAdapterV2, IAdapterHarves
      * @inheritdoc IAdapter
      */
     function getDepositSomeCodes(
-        address payable,
+        address payable _vault,
         address _underlyingToken,
         address _liquidityPool,
         uint256 _amount
@@ -115,7 +115,11 @@ contract CurveGaugeAdapter is AdapterInvestLimitBase, IAdapterV2, IAdapterHarves
             _underlyingToken,
             abi.encodeCall(ERC20(_underlyingToken).approve, (_liquidityPool, _amount))
         );
-        _codes[2] = abi.encode(_liquidityPool, abi.encodeWithSignature("deposit(uint256)", _amount));
+        // Claim pending unclaimed reward tokens on deposit
+        _codes[2] = abi.encode(
+            _liquidityPool,
+            abi.encodeWithSignature("deposit(uint256,address,bool)", _amount, _vault, true)
+        );
     }
 
     /**
@@ -145,7 +149,8 @@ contract CurveGaugeAdapter is AdapterInvestLimitBase, IAdapterV2, IAdapterHarves
         uint256 _amount
     ) public pure override returns (bytes[] memory _codes) {
         _codes = new bytes[](1);
-        _codes[0] = abi.encode(_liquidityPool, abi.encodeWithSignature("withdraw(uint256)", _amount));
+        // claim pending unclaimed reward tokens on withdraw
+        _codes[0] = abi.encode(_liquidityPool, abi.encodeWithSignature("withdraw(uint256,bool)", _amount, true));
     }
 
     /**
