@@ -69,24 +69,29 @@ export function cubic_root(x: BigNumber): BigNumber {
 }
 
 export async function tricrypto_lp_price() {
-  // const triCryptoSwapPoolV1 = <ICurveATriCryptoSwapV1>(
-  //   await ethers.getContractAt("ICurveATriCryptoSwapV1", "0x751B1e21756bDbc307CBcC5085c042a0e9AaEf36")
-  // );
-  // const GAMMA0 = 69999999999999;
-  // const A0 = 3645
-  // const DISCOUNT0 = 0;
-  // const vp = await triCryptoSwapPoolV1.virtual_price();
-  // const p1 = await triCryptoSwapPoolV1.price_oracle(0)
-  // const p2 = await triCryptoSwapPoolV1.price_oracle(1)
-  // let max_price = BigNumber.from("3").mul(vp).mul(cubic_root(p1.mul(p2))).div(BigNumber.from(10).pow("18"))
+  const triCryptoSwapPoolV1 = <ICurveATriCryptoSwapV1>(
+    await ethers.getContractAt("ICurveATriCryptoSwapV1", "0x751B1e21756bDbc307CBcC5085c042a0e9AaEf36")
+  );
+  const GAMMA0 = 69999999999999;
+  const A0 = 3645;
+  const DISCOUNT0 = 0;
+  const vp = await triCryptoSwapPoolV1.virtual_price();
+  const p1 = await triCryptoSwapPoolV1.price_oracle(0);
+  const p2 = await triCryptoSwapPoolV1.price_oracle(1);
+  let max_price = BigNumber.from("3")
+    .mul(vp)
+    .mul(cubic_root(p1.mul(p2)))
+    .div(BigNumber.from(10).pow("18"));
   // # ((A/A0) * (gamma/gamma0)**2) ** (1/3)
-  // const g = (await triCryptoSwapPoolV1.gamma()).mul(10**18).div(GAMMA0)
-  // const a = (await triCryptoSwapPoolV1.A()).mul(10**18).div(A0)
-  // let discount = max(g**2 / 10**18 * a, 10**34)  // # handle qbrt nonconvergence
+  const g = (await triCryptoSwapPoolV1.gamma()).mul(BigNumber.from(10).pow("18")).div(GAMMA0);
+  const a = (await triCryptoSwapPoolV1.A()).mul(BigNumber.from(10).pow("18")).div(A0);
+  const l1 = BigNumber.from(g).pow("2").div(BigNumber.from(10).pow("18").mul(a));
+  const l2 = BigNumber.from(10).pow("34");
+  let discount = l1.gt(l2) ? l1 : l2; // # handle qbrt nonconvergence
   // # if discount is small, we take an upper bound
-  // discount = cubic_root(discount).mul(DISCOUNT0).div(10**18)
-  // max_price = max_price.sub(max_price.mul(discount).div(10**18)
-  // console.log(max_price)
+  discount = cubic_root(discount).mul(DISCOUNT0).div(BigNumber.from(10).pow("18"));
+  max_price = max_price.sub(max_price.mul(discount).div(BigNumber.from(10).pow("18")));
+  console.log(max_price.toString);
 }
 
 main().then(console.log).catch(console.error);
