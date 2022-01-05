@@ -1,7 +1,7 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Fixture, MockContract } from "ethereum-waffle";
 import { Artifact } from "hardhat/types";
-import { CurveGaugeAdapter, CurveStableSwapAdapter, IAdapterRegistryBase, TestDeFiAdapter } from "../typechain";
+import { CurveGaugeAdapter, CurveStableSwapAdapter, TestDeFiAdapter } from "../typechain";
 import { CurveATriCryptoSwapAdapter } from "../typechain/CurveATriCryptoSwapAdapter";
 import { CurveATriCryptoZapAdapter } from "../typechain/CurveATriCryptoZapAdapter";
 import { CurveMetapoolFactoryAdapter } from "../typechain/CurveMetapoolFactoryAdapter";
