@@ -1,11 +1,10 @@
 import { ethers } from "hardhat";
 import CurveAdapterParticulars from "@optyfi/defi-legos/polygon/curve";
 import { ICurveATriCryptoSwapV1 } from "../typechain/ICurveATriCryptoSwapV1";
-// import { ICurveATriCryptoSwapV3 } from "../typechain/ICurveATriCryptoSwapV3";
 import { BigNumber } from "ethers";
 import { setTokenBalanceInStorage } from "../test/utils";
 import { ICurveATriCryptoZap } from "../typechain/ICurveATriCryptoZap";
-import { ERC20 } from "../typechain";
+import { ERC20, ICurve3StableSwap } from "../typechain";
 
 const {
   CurveATriCryptoSwap: { pools: CurveCryptoPools },
@@ -47,18 +46,25 @@ export function cubic_root(x: BigNumber): BigNumber {
   for (let i = 0; i < 255; i++) {
     let diff = BigNumber.from("0");
     const D_prev = D;
-    D = D.mul(
-      BigNumber.from(2)
-        .mul(to_10_pow_18)
-        .add(x)
-        .div(D.mul(to_10_pow_18).div(D.mul(to_10_pow_18).div(D)).div(BigNumber.from(3).mul(to_10_pow_18))),
-    );
-
+    // D = D.mul(
+    //   BigNumber.from(2)
+    //     .mul(to_10_pow_18)
+    //     .add(x)
+    //     .div(D.mul(to_10_pow_18).div(D.mul(to_10_pow_18).div(D)).div(BigNumber.from(3).mul(to_10_pow_18))),
+    // );
+    const x1 = BigNumber.from("2").mul(to_10_pow_18);
+    const x1Addx = x1.add(x);
+    const x2 = D.mul(to_10_pow_18);
+    const x3 = BigNumber.from("3").mul(to_10_pow_18);
+    D = D.mul(x1Addx.div(x2).div(x2).div(D)).div(x3);
     if (D.gt(D_prev)) {
       diff = D.sub(D_prev);
     } else {
       diff = D_prev.sub(D);
     }
+    console.log("i# : ", i);
+    console.log("d# : ", D.toString());
+    console.log("diff# : ", diff.toString());
     if (diff.lte(1) || diff.mul(to_10_pow_18).lt(D)) {
       return D;
     }
@@ -89,6 +95,11 @@ export async function tricrypto_lp_price() {
   // # if discount is small, we take an upper bound
   discount = cubic_root(discount).mul(DISCOUNT0).div(to_10_pow_18);
   max_price = max_price.sub(max_price.mul(discount).div(to_10_pow_18));
+  const stableSwap = <ICurve3StableSwap>(
+    await ethers.getContractAt("ICurve3StableSwap", "0x445FE580eF8d70FF569aB36e80c647af338db351")
+  );
+  const svp = await stableSwap.get_virtual_price();
+  max_price = max_price.mul(svp).div(to_10_pow_18);
   console.log(max_price.toString);
 }
 
