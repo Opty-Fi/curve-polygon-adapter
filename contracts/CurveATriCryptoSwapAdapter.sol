@@ -10,6 +10,6 @@ import { IAdapterInvestLimit } from "@optyfi/defi-legos/interfaces/defiAdapters/
 import { ICurveATriCryptoZap } from "@optyfi/defi-legos/polygon/curve/contracts/ICurveATriCryptoZap.sol";
 
 // TODO TriCryptoSwap implementation
-contract CurveCryptoZapAdapter is AdapterInvestLimitBase {
+contract CurveATriCryptoZapAdapter is AdapterInvestLimitBase {
     constructor(address _registry) AdapterModifiersBase(_registry) {}
 }
