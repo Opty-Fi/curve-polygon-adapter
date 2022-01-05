@@ -62,7 +62,7 @@ describe("Curve on Polygon", function () {
           this.mockRegistry.address,
         ])
       );
-      this.testDeFiAdapterForStableSwap = <TestDeFiAdapter>(
+      this.testDeFiAdapterForMetapoolFactory = <TestDeFiAdapter>(
         await hre.waffle.deployContract(this.signers.deployer, this.testDeFiAdapterArtifact)
       );
     });
@@ -79,7 +79,7 @@ describe("Curve on Polygon", function () {
       this.curveGaugeAdapter = <CurveGaugeAdapter>(
         await hre.waffle.deployContract(this.signers.deployer, curveGaugeArtifact, [this.mockRegistry.address])
       );
-      this.testDeFiAdapterForStableSwap = <TestDeFiAdapter>(
+      this.testDeFiAdapterForGauge = <TestDeFiAdapter>(
         await hre.waffle.deployContract(this.signers.deployer, this.testDeFiAdapterArtifact)
       );
     });
@@ -96,7 +96,7 @@ describe("Curve on Polygon", function () {
       this.curveATriCryptoSwapAdapter = <CurveATriCryptoSwapAdapter>(
         await hre.waffle.deployContract(this.signers.deployer, curveATriCryptoSwapArtifact, [this.mockRegistry.address])
       );
-      this.testDeFiAdapterForStableSwap = <TestDeFiAdapter>(
+      this.testDeFiAdapterForATriCryptoSwap = <TestDeFiAdapter>(
         await hre.waffle.deployContract(this.signers.deployer, this.testDeFiAdapterArtifact)
       );
     });
@@ -113,7 +113,7 @@ describe("Curve on Polygon", function () {
       this.curveATriCryptoZapAdapter = <CurveATriCryptoZapAdapter>(
         await hre.waffle.deployContract(this.signers.deployer, curveATriCryptoZapArtifact, [this.mockRegistry.address])
       );
-      this.testDeFiAdapterForStableSwap = <TestDeFiAdapter>(
+      this.testDeFiAdapterForATriCryptoZap = <TestDeFiAdapter>(
         await hre.waffle.deployContract(this.signers.deployer, this.testDeFiAdapterArtifact)
       );
     });
