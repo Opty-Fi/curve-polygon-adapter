@@ -11,6 +11,8 @@ const {
   CurveATriCryptoSwap: { pools: CurveCryptoPools },
 } = CurveAdapterParticulars;
 
+const to_10_pow_18 = BigNumber.from(10).pow(18);
+
 const amWBTC_v3 = CurveCryptoPools.amWBTC_crvUSDBTCETH_3;
 const amWBTC_v1 = CurveCryptoPools.amWBTC_crvUSDCBTCETH_1;
 const atriCryptoZapPool = CurveAdapterParticulars.CurveATriCryptoZap.pools.dai_crvUSDBTCETH;
@@ -41,19 +43,15 @@ export function cubic_root(x: BigNumber): BigNumber {
   // # result is at base 1e18
   // # Will have convergence problems when ETH*BTC is cheaper than 0.01 squared dollar
   // # (for example, when BTC < $0.1 and ETH < $0.1)
-  let D = x.div(BigNumber.from(10).pow("18"));
+  let D = x.div(to_10_pow_18);
   for (let i = 0; i < 255; i++) {
     let diff = BigNumber.from("0");
     const D_prev = D;
     D = D.mul(
       BigNumber.from(2)
-        .mul(BigNumber.from(10).pow("18"))
+        .mul(to_10_pow_18)
         .add(x)
-        .div(
-          D.mul(BigNumber.from(10).pow("18"))
-            .div(D.mul(BigNumber.from(10).pow("18")).div(D))
-            .div(BigNumber.from(3).mul(BigNumber.from(10).pow("18"))),
-        ),
+        .div(D.mul(to_10_pow_18).div(D.mul(to_10_pow_18).div(D)).div(BigNumber.from(3).mul(to_10_pow_18))),
     );
 
     if (D.gt(D_prev)) {
@@ -61,7 +59,7 @@ export function cubic_root(x: BigNumber): BigNumber {
     } else {
       diff = D_prev.sub(D);
     }
-    if (diff.lte(1) || diff.mul(BigNumber.from(10).pow("18")).lt(D)) {
+    if (diff.lte(1) || diff.mul(to_10_pow_18).lt(D)) {
       return D;
     }
   }
@@ -81,16 +79,16 @@ export async function tricrypto_lp_price() {
   let max_price = BigNumber.from("3")
     .mul(vp)
     .mul(cubic_root(p1.mul(p2)))
-    .div(BigNumber.from(10).pow("18"));
+    .div(to_10_pow_18);
   // # ((A/A0) * (gamma/gamma0)**2) ** (1/3)
-  const g = (await triCryptoSwapPoolV1.gamma()).mul(BigNumber.from(10).pow("18")).div(GAMMA0);
-  const a = (await triCryptoSwapPoolV1.A()).mul(BigNumber.from(10).pow("18")).div(A0);
-  const l1 = BigNumber.from(g).pow("2").div(BigNumber.from(10).pow("18").mul(a));
+  const g = (await triCryptoSwapPoolV1.gamma()).mul(to_10_pow_18).div(GAMMA0);
+  const a = (await triCryptoSwapPoolV1.A()).mul(to_10_pow_18).div(A0);
+  const l1 = BigNumber.from(g).pow("2").div(to_10_pow_18.mul(a));
   const l2 = BigNumber.from(10).pow("34");
   let discount = l1.gt(l2) ? l1 : l2; // # handle qbrt nonconvergence
   // # if discount is small, we take an upper bound
-  discount = cubic_root(discount).mul(DISCOUNT0).div(BigNumber.from(10).pow("18"));
-  max_price = max_price.sub(max_price.mul(discount).div(BigNumber.from(10).pow("18")));
+  discount = cubic_root(discount).mul(DISCOUNT0).div(to_10_pow_18);
+  max_price = max_price.sub(max_price.mul(discount).div(to_10_pow_18));
   console.log(max_price.toString);
 }
 
