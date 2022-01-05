@@ -29,7 +29,7 @@ export const NETWORKS_CHAIN_ID: iParamsPerNetwork<number | "auto"> = {
 
 export const BLOCK_TO_FORK = {
   [ePolygonNetwork.mumbai]: undefined,
-  [ePolygonNetwork.matic]: 23319604,
+  [ePolygonNetwork.matic]: 23380891,
 };
 
 export const buildForkConfig = (): HardhatNetworkForkingUserConfig | undefined => {

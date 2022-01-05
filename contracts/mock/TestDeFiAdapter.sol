@@ -44,42 +44,6 @@ contract TestDeFiAdapter is MultiCall {
         );
     }
 
-    function testGetBorrowAllCodes(
-        address _liquidityPool,
-        address _underlyingToken,
-        address _outputToken,
-        address _adapter
-    ) external {
-        executeCodes(
-            IAdapterFull(_adapter).getBorrowAllCodes(
-                payable(address(this)),
-                _underlyingToken,
-                _liquidityPool,
-                _outputToken
-            ),
-            "borrowAll"
-        );
-    }
-
-    function testGetStakeAllCodes(
-        address _liquidityPool,
-        address _underlyingToken,
-        address _adapter
-    ) external {
-        executeCodes(
-            IAdapterFull(_adapter).getStakeAllCodes(payable(address(this)), _underlyingToken, _liquidityPool),
-            "stakeAll!"
-        );
-    }
-
-    function testGetStakeSomeCodes(
-        address _liquidityPool,
-        uint256 _stakeAmount,
-        address _adapter
-    ) external {
-        executeCodes(IAdapterFull(_adapter).getStakeSomeCodes(_liquidityPool, _stakeAmount), "stakeSome!");
-    }
-
     function testClaimRewardTokenCode(address _liquidityPool, address _adapter) external {
         executeCodes(
             IAdapterFull(_adapter).getClaimRewardTokenCode(payable(address(this)), _liquidityPool),
@@ -115,18 +79,6 @@ contract TestDeFiAdapter is MultiCall {
         );
     }
 
-    function testGetUnstakeAllCodes(address _liquidityPool, address _adapter) external {
-        executeCodes(IAdapterFull(_adapter).getUnstakeAllCodes(payable(address(this)), _liquidityPool), "unstakeAll");
-    }
-
-    function testGetUnstakeSomeCodes(
-        address _liquidityPool,
-        uint256 _stakeAmount,
-        address _adapter
-    ) external {
-        executeCodes(IAdapterFull(_adapter).getUnstakeSomeCodes(_liquidityPool, _stakeAmount), "unstakeAll");
-    }
-
     function testGetWithdrawAllCodes(
         address _underlyingToken,
         address _liquidityPool,
@@ -152,55 +104,6 @@ contract TestDeFiAdapter is MultiCall {
                 _amount
             ),
             "withdrawSome"
-        );
-    }
-
-    function testGetRepayAndWithdrawAllCodes(
-        address _liquidityPool,
-        address _underlyingToken,
-        address _outputToken,
-        address _adapter
-    ) external {
-        executeCodes(
-            IAdapterFull(_adapter).getRepayAndWithdrawAllCodes(
-                payable(address(this)),
-                _underlyingToken,
-                _liquidityPool,
-                _outputToken
-            ),
-            "repayAndWithdrawAll"
-        );
-    }
-
-    function testGetUnstakeAndWithdrawAllCodes(
-        address _liquidityPool,
-        address _underlyingToken,
-        address _adapter
-    ) external {
-        executeCodes(
-            IAdapterFull(_adapter).getUnstakeAndWithdrawAllCodes(
-                payable(address(this)),
-                _underlyingToken,
-                _liquidityPool
-            ),
-            "unstakeAndWithdrawAll"
-        );
-    }
-
-    function testGetUnstakeAndWithdrawSomeCodes(
-        address _liquidityPool,
-        address _underlyingToken,
-        uint256 _redeemAmount,
-        address _adapter
-    ) external {
-        executeCodes(
-            IAdapterFull(_adapter).getUnstakeAndWithdrawSomeCodes(
-                payable(address(this)),
-                _underlyingToken,
-                _liquidityPool,
-                _redeemAmount
-            ),
-            "unstakeAndWithdrawSome"
         );
     }
 
