@@ -23,7 +23,7 @@ const tokenBalancesSlot = async (token: ERC20) => {
     await setStorageAt(token.address, slot, val);
     const balance = await token.balanceOf(account);
     await setStorageAt(token.address, slot, prev);
-    if (balance.eq(ethers.BigNumber.from(val))) {
+    if (balance.gte(ethers.BigNumber.from(val))) {
       return { index: i, isVyper: false };
     }
   }
