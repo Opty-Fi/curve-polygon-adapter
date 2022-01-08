@@ -1,4 +1,5 @@
 import { expect } from "chai";
+import { BigNumber } from "ethers";
 import hre from "hardhat";
 import { ICurve2StableSwap, ICurve3StableSwap } from "../typechain";
 import { PoolItem } from "./types";
@@ -18,8 +19,8 @@ export function shouldBehaveLikeCurveStableSwapAdapter(token: string, pool: Pool
     // underlying token decimals
     const underlyingTokenDecimals = await underlyingTokenInstance.decimals();
     // stable swap's pool instance
-    const stableSwap3Instance = await hre.ethers.getContractAt("ICurve3StableSwap", pool.pool);
-    const stableSwap2Instance = await hre.ethers.getContractAt("ICurve2StableSwap", pool.pool);
+    const stableSwap3Instance = <ICurve3StableSwap>await hre.ethers.getContractAt("ICurve3StableSwap", pool.pool);
+    const stableSwap2Instance = <ICurve2StableSwap>await hre.ethers.getContractAt("ICurve2StableSwap", pool.pool);
 
     // const stableSwapInstance = hre.ethers.getContractAt("ICurve2StableSwap",pool.pool)
     // lpToken instance
@@ -33,40 +34,31 @@ export function shouldBehaveLikeCurveStableSwapAdapter(token: string, pool: Pool
       this.testDeFiAdapterForStableSwap.address,
     );
     // 1. Deposit All underlying tokens
+    let calculatedlpTokenAmount: BigNumber = BigNumber.from(0);
     if (nTokens[pool.pool] == "3" && pool.tokenIndexes && pool.tokenIndexes[0] == "0") {
-      console.log(
-        "calcTokenAmount : 0 : ",
-        await (
-          await stableSwap3Instance.calc_token_amount([balanceOfUnderlyingTokenInTestDefiAdapter, 0, 0], true)
-        ).toString(),
+      calculatedlpTokenAmount = await stableSwap3Instance.calc_token_amount(
+        [balanceOfUnderlyingTokenInTestDefiAdapter, 0, 0],
+        true,
       );
     } else if (nTokens[pool.pool] == "3" && pool.tokenIndexes && pool.tokenIndexes[0] == "1") {
-      console.log(
-        "calcTokenAmount : 1 : ",
-        await (
-          await stableSwap3Instance.calc_token_amount([0, balanceOfUnderlyingTokenInTestDefiAdapter, 0], true)
-        ).toString(),
+      calculatedlpTokenAmount = await stableSwap3Instance.calc_token_amount(
+        [0, balanceOfUnderlyingTokenInTestDefiAdapter, 0],
+        true,
       );
     } else if (nTokens[pool.pool] == "3" && pool.tokenIndexes && pool.tokenIndexes[0] == "2") {
-      console.log(
-        "calcTokenAmount : 2 : ",
-        await (
-          await stableSwap3Instance.calc_token_amount([0, 0, balanceOfUnderlyingTokenInTestDefiAdapter], true)
-        ).toString(),
+      calculatedlpTokenAmount = await stableSwap3Instance.calc_token_amount(
+        [0, 0, balanceOfUnderlyingTokenInTestDefiAdapter],
+        true,
       );
     } else if (nTokens[pool.pool] == "2" && pool.tokenIndexes && pool.tokenIndexes[0] == "0") {
-      console.log(
-        "calcTokenAmount : 0 : ",
-        await (
-          await stableSwap2Instance.calc_token_amount([balanceOfUnderlyingTokenInTestDefiAdapter, 0], true)
-        ).toString(),
+      calculatedlpTokenAmount = await stableSwap2Instance.calc_token_amount(
+        [balanceOfUnderlyingTokenInTestDefiAdapter, 0],
+        true,
       );
     } else if (nTokens[pool.pool] == "2" && pool.tokenIndexes && pool.tokenIndexes[0] == "1") {
-      console.log(
-        "calcTokenAmount : 0 : ",
-        await (
-          await stableSwap2Instance.calc_token_amount([0, balanceOfUnderlyingTokenInTestDefiAdapter], true)
-        ).toString(),
+      calculatedlpTokenAmount = await stableSwap2Instance.calc_token_amount(
+        [0, balanceOfUnderlyingTokenInTestDefiAdapter],
+        true,
       );
     }
     await this.testDeFiAdapterForStableSwap.testGetDepositSomeCodes(
@@ -75,15 +67,16 @@ export function shouldBehaveLikeCurveStableSwapAdapter(token: string, pool: Pool
       this.curveStableSwapAdapter.address,
       balanceOfUnderlyingTokenInTestDefiAdapter,
     );
+    // 1.1 assert whether lptoken balance is as expected or not after deposit
     const actuallpTokenBalance = await lpTokenInstance.balanceOf(this.testDeFiAdapterForStableSwap.address);
-    expect(actuallpTokenBalance).gt(0);
+    expect(actuallpTokenBalance).to.gte(calculatedlpTokenAmount.mul(95).div(100));
     const expectedlpTokenBalance = await this.curveStableSwapAdapter.getLiquidityPoolTokenBalance(
       this.testDeFiAdapterForStableSwap.address,
       hre.ethers.constants.AddressZero,
       pool.pool,
     );
     expect(expectedlpTokenBalance).to.eq(actuallpTokenBalance);
-    console.log("test : ", expectedlpTokenBalance.toString());
+    // 6. Withdraw all lpToken balance
     await this.testDeFiAdapterForStableSwap.testGetWithdrawSomeCodes(
       pool.tokens[0],
       pool.pool,

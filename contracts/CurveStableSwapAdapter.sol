@@ -418,8 +418,7 @@ contract CurveStableSwapAdapter is IAdapter, AdapterInvestLimitBase {
             uint256 _nCoins,
             address[8] memory _underlyingTokens,
             uint256[] memory _amounts,
-            uint256 _codeLength,
-            uint256 _minMintAmount
+            uint256 _codeLength
         ) = _getDepositCodeConfig(_underlyingToken, _liquidityPool, _amount);
         if (_codeLength > 1) {
             _codes = new bytes[](_codeLength);
@@ -445,6 +444,8 @@ contract CurveStableSwapAdapter is IAdapter, AdapterInvestLimitBase {
             }
             if (_nCoins == uint256(2)) {
                 uint256[2] memory _depositAmounts = [_amounts[0], _amounts[1]];
+                uint256 _minMintAmount = (ICurve2StableSwap(_liquidityPool).calc_token_amount(_depositAmounts, true) *
+                    95) / 100;
                 _codes[_j] = abi.encode(
                     _liquidityPool,
                     abi.encodeWithSignature(
@@ -456,6 +457,8 @@ contract CurveStableSwapAdapter is IAdapter, AdapterInvestLimitBase {
                 );
             } else if (_nCoins == uint256(3)) {
                 uint256[3] memory _depositAmounts = [_amounts[0], _amounts[1], _amounts[2]];
+                uint256 _minMintAmount = (ICurve3StableSwap(_liquidityPool).calc_token_amount(_depositAmounts, true) *
+                    95) / 100;
                 _codes[_j] = abi.encode(
                     _liquidityPool,
                     abi.encodeWithSignature(
@@ -490,8 +493,7 @@ contract CurveStableSwapAdapter is IAdapter, AdapterInvestLimitBase {
             uint256 _nCoins,
             address[8] memory _underlyingTokens,
             uint256[] memory _amounts,
-            uint256 _codeLength,
-            uint256 _minMintAmount
+            uint256 _codeLength
         )
     {
         _nCoins = nTokens[_liquidityPool];
@@ -506,10 +508,6 @@ contract CurveStableSwapAdapter is IAdapter, AdapterInvestLimitBase {
                     getPoolValue(_liquidityPool, _underlyingToken)
                 );
                 if (_amounts[_i] > 0) {
-                    uint256 _decimals = ERC20(_underlyingToken).decimals();
-                    _minMintAmount =
-                        (_amounts[_i] * 10**(uint256(36) - _decimals) * 95) /
-                        (ICurve2StableSwap(_liquidityPool).get_virtual_price() * 100);
                     if (noZeroAllowanceAllowed[_underlyingTokens[_i]]) {
                         _codeLength = 2;
                     } else {
