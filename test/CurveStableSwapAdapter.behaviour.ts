@@ -29,33 +29,38 @@ export function shouldBehaveLikeCurveStableSwapAdapter(token: string, pool: Pool
     const lpTokenDecimals = await lpTokenInstance.decimals();
 
     // fund the testDefiAdapter with underlying tokens
-    await setTokenBalanceInStorage(underlyingTokenInstance, this.testDeFiAdapterForStableSwap.address, "1");
+    if (pool.pool == "0xC2d95EEF97Ec6C17551d45e77B590dc1F9117C67") {
+      // btc pool
+      await setTokenBalanceInStorage(underlyingTokenInstance, this.testDeFiAdapterForStableSwap.address, "0.001");
+    } else {
+      await setTokenBalanceInStorage(underlyingTokenInstance, this.testDeFiAdapterForStableSwap.address, "2000");
+    }
     const balanceOfUnderlyingTokenInTestDefiAdapter = await underlyingTokenInstance.balanceOf(
       this.testDeFiAdapterForStableSwap.address,
     );
     // 1. Deposit All underlying tokens
     let calculatedlpTokenAmount: BigNumber = BigNumber.from(0);
-    if (nTokens[pool.pool] == "3" && pool.tokenIndexes && pool.tokenIndexes[0] == "0") {
+    if (nTokens[pool.pool] == "3" && pool.tokenIndexes[0] == "0") {
       calculatedlpTokenAmount = await stableSwap3Instance.calc_token_amount(
         [balanceOfUnderlyingTokenInTestDefiAdapter, 0, 0],
         true,
       );
-    } else if (nTokens[pool.pool] == "3" && pool.tokenIndexes && pool.tokenIndexes[0] == "1") {
+    } else if (nTokens[pool.pool] == "3" && pool.tokenIndexes[0] == "1") {
       calculatedlpTokenAmount = await stableSwap3Instance.calc_token_amount(
         [0, balanceOfUnderlyingTokenInTestDefiAdapter, 0],
         true,
       );
-    } else if (nTokens[pool.pool] == "3" && pool.tokenIndexes && pool.tokenIndexes[0] == "2") {
+    } else if (nTokens[pool.pool] == "3" && pool.tokenIndexes[0] == "2") {
       calculatedlpTokenAmount = await stableSwap3Instance.calc_token_amount(
         [0, 0, balanceOfUnderlyingTokenInTestDefiAdapter],
         true,
       );
-    } else if (nTokens[pool.pool] == "2" && pool.tokenIndexes && pool.tokenIndexes[0] == "0") {
+    } else if (nTokens[pool.pool] == "2" && pool.tokenIndexes[0] == "0") {
       calculatedlpTokenAmount = await stableSwap2Instance.calc_token_amount(
         [balanceOfUnderlyingTokenInTestDefiAdapter, 0],
         true,
       );
-    } else if (nTokens[pool.pool] == "2" && pool.tokenIndexes && pool.tokenIndexes[0] == "1") {
+    } else if (nTokens[pool.pool] == "2" && pool.tokenIndexes[0] == "1") {
       calculatedlpTokenAmount = await stableSwap2Instance.calc_token_amount(
         [0, balanceOfUnderlyingTokenInTestDefiAdapter],
         true,
@@ -77,6 +82,10 @@ export function shouldBehaveLikeCurveStableSwapAdapter(token: string, pool: Pool
     );
     expect(expectedlpTokenBalance).to.eq(actuallpTokenBalance);
     // 6. Withdraw all lpToken balance
+    const calculatedUnderlyingTokenBalanceAfterWithdraw = await stableSwap3Instance.calc_withdraw_one_coin(
+      actuallpTokenBalance,
+      pool.tokenIndexes[0],
+    );
     await this.testDeFiAdapterForStableSwap.testGetWithdrawSomeCodes(
       pool.tokens[0],
       pool.pool,
@@ -89,5 +98,11 @@ export function shouldBehaveLikeCurveStableSwapAdapter(token: string, pool: Pool
       pool.pool,
     );
     expect(actuallpTokenBalanceAfterWithdraw).to.eq(0);
+    const actualUnderlyingTokenBalanceAfterWithdraw = await underlyingTokenInstance.balanceOf(
+      this.testDeFiAdapterForStableSwap.address,
+    );
+    expect(actualUnderlyingTokenBalanceAfterWithdraw).gte(
+      calculatedUnderlyingTokenBalanceAfterWithdraw.mul(95).div(100),
+    );
   });
 }

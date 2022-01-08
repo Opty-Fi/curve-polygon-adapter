@@ -27,7 +27,7 @@ export interface PoolItem {
   tokens: string[];
   swap?: string;
   deprecated?: boolean;
-  tokenIndexes?: string[];
+  tokenIndexes: string[];
 }
 
 export interface LiquidityPool {
