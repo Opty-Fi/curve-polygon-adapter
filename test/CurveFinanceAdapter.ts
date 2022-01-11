@@ -4,7 +4,11 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 // pool data
 import CurveAdapterParticulars from "@optyfi/defi-legos/polygon/curve";
 // behaviour test files
-import { shouldBehaveLikeCurveStableSwapAdapter } from "./CurveStableSwapAdapter.behaviour";
+import {
+  shouldBehaveLikeCurveStableSwapAdapter,
+  shouldHaveUnderlyingTokensLikeCurveStableSwapAdapter,
+  stableSwappedWrappedTokens,
+} from "./CurveStableSwapAdapter.behaviour";
 import { shouldBehaveLikeCurveFactoryMetapoolAdapter } from "./CurveFactoryMetapoolAdapter.behaviour";
 import { shouldBehaveLikeCurveGaugeAdapter } from "./CurveGaugeAdapter.behaviour";
 import { shouldBehaveLikeCurveATriCryptoSwapAdapter } from "./CurveATriCryptoSwapAdapter.behaviour";
@@ -50,7 +54,13 @@ describe("Curve on Polygon", function () {
     Object.keys(CurveStableSwapPools).map((token: string) => {
       const poolItem: PoolItem = (CurveStableSwapPools as LiquidityPool)[token];
       if (poolItem.tokens.length == 1) {
-        shouldBehaveLikeCurveStableSwapAdapter(token, poolItem);
+        if (!stableSwappedWrappedTokens.includes(poolItem.tokens[0])) {
+          shouldBehaveLikeCurveStableSwapAdapter(token, poolItem);
+        }
+      } else {
+        if (!stableSwappedWrappedTokens.includes(poolItem.tokens[0])) {
+          shouldHaveUnderlyingTokensLikeCurveStableSwapAdapter(poolItem);
+        }
       }
     });
   });

@@ -12,6 +12,14 @@ const nTokens: {
   "0xC2d95EEF97Ec6C17551d45e77B590dc1F9117C67": "2",
 };
 
+export const stableSwappedWrappedTokens = [
+  "0x27F8D03b3a2196956ED754baDc28D73be8830A6e",
+  "0x1a13F4Ca1d028320A707D99520AbFefca3998b7F",
+  "0x60D55F02A771d515e077c9C2403a1ef324885CeC",
+  "0x5c2ed810328349100A66B82b78a1791B101C9D61",
+  "0xDBf31dF14B66535aF65AaC99C32e9eA844e14501",
+];
+
 export function shouldBehaveLikeCurveStableSwapAdapter(token: string, pool: PoolItem): void {
   it.only(`${token}, pool address : ${pool.pool}, lpToken address : ${pool.lpToken}`, async function () {
     // underlying token instance
@@ -47,14 +55,16 @@ export function shouldBehaveLikeCurveStableSwapAdapter(token: string, pool: Pool
     // 0.4 setCalcWithdrawOneCoinNotSame
 
     // 1. lpToken
-    // 2. Underlying tokens
-    // 3. Pool value
+    expect(await this.curveStableSwapAdapter.getLiquidityPoolToken(ethers.constants.AddressZero, pool.pool)).to.eq(
+      pool.lpToken,
+    );
+    // 2. Pool value
     const actualPoolValue = await this.curveStableSwapAdapter.getPoolValue(pool.pool, ethers.constants.AddressZero);
     const _virtualPrice = await stableSwap2Instance.get_virtual_price();
     const _totalSupply = await lpTokenInstance.totalSupply();
     const expectedPoolValue = await _virtualPrice.mul(_totalSupply).div(BigNumber.from("10").pow("18"));
     expect(actualPoolValue).to.eq(expectedPoolValue);
-    // 4. Deposit All underlying tokens
+    // 3. Deposit All underlying tokens
     let calculatedlpTokenAmount: BigNumber = BigNumber.from(0);
     if (nTokens[pool.pool] == "3" && pool.tokenIndexes[0] == "0") {
       calculatedlpTokenAmount = await stableSwap3Instance.calc_token_amount(
@@ -88,7 +98,7 @@ export function shouldBehaveLikeCurveStableSwapAdapter(token: string, pool: Pool
       this.curveStableSwapAdapter.address,
       balanceOfUnderlyingTokenInTestDefiAdapter,
     );
-    // 5. assert whether lptoken balance is as expected or not after deposit
+    // 4. assert whether lptoken balance is as expected or not after deposit
     const actuallpTokenBalance = await lpTokenInstance.balanceOf(this.testDeFiAdapterForStableSwap.address);
     expect(actuallpTokenBalance).to.gte(calculatedlpTokenAmount.mul(95).div(100));
     const expectedlpTokenBalance = await this.curveStableSwapAdapter.getLiquidityPoolTokenBalance(
@@ -98,23 +108,26 @@ export function shouldBehaveLikeCurveStableSwapAdapter(token: string, pool: Pool
     );
     expect(expectedlpTokenBalance).to.eq(actuallpTokenBalance);
 
-    // 6. all amount in token
+    // 5. all amount in token
 
-    // 7. some amount in token
+    // 6. some amount in token
 
-    // 8. calculate amount in lp token
+    // 7. calculate amount in lp token
 
-    // 9. calculateRedeemableLPTokenAmount
+    // 8. calculateRedeemableLPTokenAmount
 
-    // 10. isRedeemableAmountSufficient
+    // 9. isRedeemableAmountSufficient
 
-    // 11. getRewardToken
+    // 10. getRewardToken
+    expect(await this.curveStableSwapAdapter.getRewardToken(ethers.constants.AddressZero)).to.eq(
+      ethers.constants.AddressZero,
+    );
 
-    // 12. canStake
+    // 11. canStake
+    expect(await this.curveStableSwapAdapter.canStake(ethers.constants.AddressZero)).to.false;
+    // 12.
 
-    // 13.
-
-    // 6. Withdraw all lpToken balance
+    // 13. Withdraw all lpToken balance
     const calculatedUnderlyingTokenBalanceAfterWithdraw = await stableSwap3Instance.calc_withdraw_one_coin(
       actuallpTokenBalance,
       pool.tokenIndexes[0],
@@ -137,5 +150,13 @@ export function shouldBehaveLikeCurveStableSwapAdapter(token: string, pool: Pool
     expect(actualUnderlyingTokenBalanceAfterWithdraw).gte(
       calculatedUnderlyingTokenBalanceAfterWithdraw.mul(95).div(100),
     );
+  });
+}
+
+export function shouldHaveUnderlyingTokensLikeCurveStableSwapAdapter(pool: PoolItem): void {
+  it.only(`underlyingtokens test, pool address : ${pool.pool}, lpToken address : ${pool.lpToken}`, async function () {
+    expect(
+      await this.curveStableSwapAdapter.getUnderlyingTokens(pool.pool, ethers.constants.AddressZero),
+    ).to.have.members(pool.tokens);
   });
 }

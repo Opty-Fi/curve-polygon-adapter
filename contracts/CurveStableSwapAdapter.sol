@@ -25,18 +25,6 @@ contract CurveStableSwapAdapter is IAdapter, AdapterInvestLimitBase {
 
     address public constant aBTCPool = address(0xC2d95EEF97Ec6C17551d45e77B590dc1F9117C67);
 
-    /**@notice amDAI (Aave Matic Market DAI) address */
-    address public constant amDAI = address(0x27F8D03b3a2196956ED754baDc28D73be8830A6e);
-
-    /**@notice amUSDC (Aave Matic Market USDC) address */
-    address public constant amUSDC = address(0x1a13F4Ca1d028320A707D99520AbFefca3998b7F);
-
-    /**@notice amUSDT (Aave Matic Market USDT) address */
-    address public constant amUSDT = address(0x60D55F02A771d515e077c9C2403a1ef324885CeC);
-
-    /**@notice amWBTC (Aave Matic Market WBTC) address */
-    address public constant amWBTC = address(0x5c2ed810328349100A66B82b78a1791B101C9D61);
-
     /**@notice PoS DAI stable coin address */
     address public constant DAI = address(0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063);
 
@@ -64,9 +52,6 @@ contract CurveStableSwapAdapter is IAdapter, AdapterInvestLimitBase {
     /**@dev assign underlying coins per pool */
     mapping(address => address[8]) public underlyingCoins;
 
-    /**@dev list of the wrapped tokens */
-    mapping(address => bool) public wrappedTokens;
-
     /**@dev list of tokens that cannot accept zero allowance*/
     mapping(address => bool) public noZeroAllowanceAllowed;
 
@@ -75,47 +60,20 @@ contract CurveStableSwapAdapter is IAdapter, AdapterInvestLimitBase {
 
     constructor(address _registry) AdapterModifiersBase(_registry) {
         // aPool
-        wrappedTokens[amDAI] = true;
-        wrappedTokens[amUSDC] = true;
-        wrappedTokens[amUSDT] = true;
         tokenIndexes[aPool][DAI] = int128(0);
-        tokenIndexes[aPool][amDAI] = int128(0);
         tokenIndexes[aPool][USDC] = int128(1);
-        tokenIndexes[aPool][amUSDC] = int128(1);
         tokenIndexes[aPool][USDT] = int128(2);
-        tokenIndexes[aPool][amUSDT] = int128(2);
         nTokens[aPool] = uint256(3);
-        coins[aPool][0] = amDAI;
-        coins[aPool][1] = amUSDC;
-        coins[aPool][2] = amUSDT;
         underlyingCoins[aPool][0] = DAI;
         underlyingCoins[aPool][1] = USDC;
         underlyingCoins[aPool][2] = USDT;
         // aBTCPool
-        wrappedTokens[amWBTC] = true;
-        tokenIndexes[aBTCPool][amWBTC] = int128(0);
         tokenIndexes[aBTCPool][WBTC] = int128(0);
         tokenIndexes[aBTCPool][renBTC] = int128(1);
         nTokens[aBTCPool] = uint256(2);
-        coins[aBTCPool][0] = amWBTC;
         coins[aBTCPool][1] = renBTC;
         underlyingCoins[aBTCPool][0] = WBTC;
         underlyingCoins[aBTCPool][1] = renBTC;
-    }
-
-    /**
-     * @notice set the wrapped token address only by operator
-     * @dev Only operator can access this function
-     * @param _tokens list of token contract address
-     * @param _isWrapped whether the token is wrapped or not
-     */
-    function setWrappedTokens(address[] memory _tokens, bool[] memory _isWrapped) external onlyOperator {
-        uint256 _nTokens = _tokens.length;
-        require(_nTokens == _isWrapped.length, "!length");
-        for (uint256 _i; _i < _nTokens; _i++) {
-            require(_tokens[_i].isContract(), "!isContract");
-            wrappedTokens[_tokens[_i]] = _isWrapped[_i];
-        }
     }
 
     /**
@@ -237,7 +195,7 @@ contract CurveStableSwapAdapter is IAdapter, AdapterInvestLimitBase {
                     _amount,
                     tokenIndexes[_liquidityPool][_underlyingToken],
                     (getSomeAmountInToken(_underlyingToken, _liquidityPool, _amount) * 95) / 100,
-                    !wrappedTokens[_underlyingToken]
+                    true
                 )
             );
         }
@@ -325,7 +283,7 @@ contract CurveStableSwapAdapter is IAdapter, AdapterInvestLimitBase {
                     ? ICurveXSwap(_liquidityPool).calc_withdraw_one_coin(
                         _liquidityPoolTokenAmount,
                         tokenIndexes[_liquidityPool][_underlyingToken],
-                        !wrappedTokens[_liquidityPool]
+                        true
                     )
                     : ICurve2StableSwap(_liquidityPool).calc_withdraw_one_coin(
                         _liquidityPoolTokenAmount,
@@ -452,7 +410,7 @@ contract CurveStableSwapAdapter is IAdapter, AdapterInvestLimitBase {
                         "add_liquidity(uint256[2],uint256,bool)",
                         _depositAmounts,
                         _minMintAmount,
-                        !wrappedTokens[_underlyingToken]
+                        true
                     )
                 );
             } else if (_nCoins == uint256(3)) {
@@ -465,7 +423,7 @@ contract CurveStableSwapAdapter is IAdapter, AdapterInvestLimitBase {
                         "add_liquidity(uint256[3],uint256,bool)",
                         _depositAmounts,
                         _minMintAmount,
-                        !wrappedTokens[_underlyingToken]
+                        true
                     )
                 );
             }
@@ -497,7 +455,7 @@ contract CurveStableSwapAdapter is IAdapter, AdapterInvestLimitBase {
         )
     {
         _nCoins = nTokens[_liquidityPool];
-        _underlyingTokens = wrappedTokens[_underlyingToken] ? coins[_liquidityPool] : underlyingCoins[_liquidityPool];
+        _underlyingTokens = underlyingCoins[_liquidityPool];
         _amounts = new uint256[](_nCoins);
         for (uint256 _i; _i < _nCoins; _i++) {
             if (_underlyingTokens[_i] == _underlyingToken) {
