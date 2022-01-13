@@ -4,19 +4,21 @@ import hre, { ethers } from "hardhat";
 import { ICurve2StableSwap, ICurve3StableSwap } from "../typechain";
 import { PoolItem } from "./types";
 import { setTokenBalanceInStorage } from "./utils";
+import { legos } from "@optyfi/defi-legos/polygon";
+import { getAddress } from "ethers/lib/utils";
 
 const nTokens: {
   [key: string]: string;
 } = {
-  "0x445FE580eF8d70FF569aB36e80c647af338db351": "3",
-  "0xC2d95EEF97Ec6C17551d45e77B590dc1F9117C67": "2",
+  [`${legos.curve.CurveStableSwap.pools["dai+usdc+usdt_am3Crv"].pool}`]: "3",
+  [`${legos.curve.CurveStableSwap.pools["wbtc+renbtc_btcCrv"].pool}`]: "2",
 };
 
 export const stableSwappedWrappedTokens = [
-  "0x27F8D03b3a2196956ED754baDc28D73be8830A6e",
-  "0x1a13F4Ca1d028320A707D99520AbFefca3998b7F",
-  "0x60D55F02A771d515e077c9C2403a1ef324885CeC",
-  "0x5c2ed810328349100A66B82b78a1791B101C9D61",
+  legos.tokens.AMDAI,
+  legos.tokens.AMUSDC,
+  legos.tokens.AMUSDT,
+  legos.tokens.AMWBTC,
 ];
 
 export function shouldBehaveLikeCurveStableSwapAdapter(token: string, pool: PoolItem): void {
@@ -37,7 +39,7 @@ export function shouldBehaveLikeCurveStableSwapAdapter(token: string, pool: Pool
     // const lpTokenDecimals = await lpTokenInstance.decimals();
 
     // fund the testDefiAdapter with underlying tokens
-    if (pool.pool == "0xC2d95EEF97Ec6C17551d45e77B590dc1F9117C67") {
+    if (pool.pool == legos.curve.CurveStableSwap.pools["wbtc+renbtc_btcCrv"].pool) {
       // btc pool
       await setTokenBalanceInStorage(underlyingTokenInstance, this.testDeFiAdapterForStableSwap.address, "0.001");
     } else {
@@ -213,5 +215,77 @@ export function shouldHaveUnderlyingTokensLikeCurveStableSwapAdapter(pool: PoolI
     expect(
       await this.curveStableSwapAdapter.getUnderlyingTokens(pool.pool, ethers.constants.AddressZero),
     ).to.have.members(pool.tokens);
+  });
+}
+
+export function shouldInitializeVariablesLikeCurveStableSwapAdapter(): void {
+  it.only("assert constructor initialized logic", async function () {
+    expect(
+      await this.curveStableSwapAdapter.tokenIndexes(
+        legos.curve.CurveStableSwap.pools["dai+usdc+usdt_am3Crv"].pool,
+        legos.tokens.DAI,
+      ),
+    ).to.eq(0);
+    expect(
+      await this.curveStableSwapAdapter.tokenIndexes(
+        legos.curve.CurveStableSwap.pools["dai+usdc+usdt_am3Crv"].pool,
+        legos.tokens.USDC,
+      ),
+    ).to.eq(1);
+    expect(
+      await this.curveStableSwapAdapter.tokenIndexes(
+        legos.curve.CurveStableSwap.pools["dai+usdc+usdt_am3Crv"].pool,
+        legos.tokens.USDT,
+      ),
+    ).to.eq(2);
+    expect(
+      await this.curveStableSwapAdapter.tokenIndexes(
+        legos.curve.CurveStableSwap.pools["wbtc+renbtc_btcCrv"].pool,
+        legos.tokens.WBTC,
+      ),
+    ).to.eq(0);
+    expect(
+      await this.curveStableSwapAdapter.tokenIndexes(
+        legos.curve.CurveStableSwap.pools["wbtc+renbtc_btcCrv"].pool,
+        legos.tokens.RENBTC,
+      ),
+    ).to.eq(1);
+    expect(
+      await this.curveStableSwapAdapter.nTokens(legos.curve.CurveStableSwap.pools["dai+usdc+usdt_am3Crv"].pool),
+    ).to.eq(3);
+    expect(
+      await this.curveStableSwapAdapter.nTokens(legos.curve.CurveStableSwap.pools["wbtc+renbtc_btcCrv"].pool),
+    ).to.eq(2);
+
+    expect(
+      await this.curveStableSwapAdapter.underlyingCoins(
+        legos.curve.CurveStableSwap.pools["dai+usdc+usdt_am3Crv"].pool,
+        0,
+      ),
+    ).to.eq(legos.tokens.DAI);
+    expect(
+      await this.curveStableSwapAdapter.underlyingCoins(
+        legos.curve.CurveStableSwap.pools["dai+usdc+usdt_am3Crv"].pool,
+        1,
+      ),
+    ).to.eq(getAddress(legos.tokens.USDC));
+    expect(
+      await this.curveStableSwapAdapter.underlyingCoins(
+        legos.curve.CurveStableSwap.pools["dai+usdc+usdt_am3Crv"].pool,
+        2,
+      ),
+    ).to.eq(getAddress(legos.tokens.USDT));
+    expect(
+      await this.curveStableSwapAdapter.underlyingCoins(
+        legos.curve.CurveStableSwap.pools["wbtc+renbtc_btcCrv"].pool,
+        0,
+      ),
+    ).to.eq(legos.tokens.WBTC);
+    expect(
+      await this.curveStableSwapAdapter.underlyingCoins(
+        legos.curve.CurveStableSwap.pools["wbtc+renbtc_btcCrv"].pool,
+        1,
+      ),
+    ).to.eq(legos.tokens.RENBTC);
   });
 }

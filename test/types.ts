@@ -30,8 +30,19 @@ export interface PoolItem {
   tokenIndexes: string[];
 }
 
+export interface GaugeItem {
+  pool: string;
+  lpToken: string;
+  rewardTokens?: string[];
+  tokens: string[];
+}
+
 export interface LiquidityPool {
   [name: string]: PoolItem;
+}
+
+export interface GaugePool {
+  [name: string]: GaugeItem;
 }
 
 declare module "mocha" {

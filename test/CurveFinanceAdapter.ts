@@ -8,13 +8,14 @@ import {
   shouldBehaveLikeCurveStableSwapAdapter,
   shouldHaveUnderlyingTokensLikeCurveStableSwapAdapter,
   stableSwappedWrappedTokens,
+  shouldInitializeVariablesLikeCurveStableSwapAdapter,
 } from "./CurveStableSwapAdapter.behaviour";
 import { shouldBehaveLikeCurveFactoryMetapoolAdapter } from "./CurveFactoryMetapoolAdapter.behaviour";
 import { shouldBehaveLikeCurveGaugeAdapter } from "./CurveGaugeAdapter.behaviour";
 import { shouldBehaveLikeCurveATriCryptoSwapAdapter } from "./CurveATriCryptoSwapAdapter.behaviour";
 import { shouldBehaveLikeCurveATriCryptoZapAdapter } from "./CurveATriCryptoZapAdapter.behaviour";
 // types
-import { LiquidityPool, PoolItem, Signers } from "./types";
+import { GaugeItem, GaugePool, LiquidityPool, PoolItem, Signers } from "./types";
 import { CurveGaugeAdapter, CurveStableSwapAdapter, TestDeFiAdapter } from "../typechain";
 import { CurveMetapoolFactoryAdapter } from "../typechain/CurveMetapoolFactoryAdapter";
 import { CurveATriCryptoSwapAdapter } from "../typechain/CurveATriCryptoSwapAdapter";
@@ -51,6 +52,7 @@ describe("Curve on Polygon", function () {
         await hre.waffle.deployContract(this.signers.deployer, this.testDeFiAdapterArtifact)
       );
     });
+    shouldInitializeVariablesLikeCurveStableSwapAdapter();
     Object.keys(CurveStableSwapPools).map((token: string) => {
       const poolItem: PoolItem = (CurveStableSwapPools as LiquidityPool)[token];
       if (poolItem.tokens.length == 1) {
@@ -94,7 +96,7 @@ describe("Curve on Polygon", function () {
       );
     });
     Object.keys(CurveGauges).map((token: string) => {
-      const poolItem: PoolItem = (CurveGauges as LiquidityPool)[token];
+      const poolItem: GaugeItem = (CurveGauges as GaugePool)[token];
       if (poolItem.tokens.length == 1) {
         shouldBehaveLikeCurveGaugeAdapter(token, poolItem);
       }
