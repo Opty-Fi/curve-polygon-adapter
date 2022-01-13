@@ -1,11 +1,11 @@
 import { expect } from "chai";
 import { BigNumber } from "ethers";
 import hre, { ethers } from "hardhat";
+import { legos } from "@optyfi/defi-legos/polygon";
+import { getAddress } from "ethers/lib/utils";
 import { ICurve2StableSwap, ICurve3StableSwap } from "../typechain";
 import { PoolItem } from "./types";
 import { setTokenBalanceInStorage } from "./utils";
-import { legos } from "@optyfi/defi-legos/polygon";
-import { getAddress } from "ethers/lib/utils";
 
 const nTokens: {
   [key: string]: string;
@@ -27,16 +27,12 @@ export function shouldBehaveLikeCurveStableSwapAdapter(token: string, pool: Pool
     const underlyingTokenInstance = await hre.ethers.getContractAt("ERC20", pool.tokens[0]);
     const underlyingTokenDecimals = await underlyingTokenInstance.decimals();
     // underlying token decimals
-    // const underlyingTokenDecimals = await underlyingTokenInstance.decimals();
     // stable swap's pool instance
     const stableSwap3Instance = <ICurve3StableSwap>await hre.ethers.getContractAt("ICurve3StableSwap", pool.pool);
     const stableSwap2Instance = <ICurve2StableSwap>await hre.ethers.getContractAt("ICurve2StableSwap", pool.pool);
 
-    // const stableSwapInstance = hre.ethers.getContractAt("ICurve2StableSwap",pool.pool)
     // lpToken instance
     const lpTokenInstance = await hre.ethers.getContractAt("ERC20", pool.lpToken);
-    // lpToken decimals
-    // const lpTokenDecimals = await lpTokenInstance.decimals();
 
     // fund the testDefiAdapter with underlying tokens
     if (pool.pool == legos.curve.CurveStableSwap.pools["wbtc+renbtc_btcCrv"].pool) {
@@ -48,12 +44,6 @@ export function shouldBehaveLikeCurveStableSwapAdapter(token: string, pool: Pool
     const balanceOfUnderlyingTokenInTestDefiAdapter = await underlyingTokenInstance.balanceOf(
       this.testDeFiAdapterForStableSwap.address,
     );
-
-    // 0.1 setTokenIndexes
-
-    // 0.2 setNoZeroAllowanceAllowed
-
-    // 0.3 setCalcWithdrawOneCoinNotSame
 
     // 1. lpToken
     expect(await this.curveStableSwapAdapter.getLiquidityPoolToken(ethers.constants.AddressZero, pool.pool)).to.eq(
@@ -287,5 +277,110 @@ export function shouldInitializeVariablesLikeCurveStableSwapAdapter(): void {
         1,
       ),
     ).to.eq(legos.tokens.RENBTC);
+  });
+}
+
+export function shouldSetTokenIndexesLikeCurveStableSwapAdapter(): void {
+  it.only("non-operator cannot setTokenIndexes", async function () {
+    await expect(
+      this.curveStableSwapAdapter
+        .connect(this.signers.alice)
+        .setTokenIndexes(
+          [
+            legos.curve.CurveStableSwap.pools["dai+usdc+usdt_am3Crv"].pool,
+            legos.curve.CurveStableSwap.pools["dai+usdc+usdt_am3Crv"].pool,
+            legos.curve.CurveStableSwap.pools["dai+usdc+usdt_am3Crv"].pool,
+            legos.curve.CurveStableSwap.pools["wbtc+renbtc_btcCrv"].pool,
+            legos.curve.CurveStableSwap.pools["wbtc+renbtc_btcCrv"].pool,
+          ],
+          [legos.tokens.DAI, legos.tokens.USDC, legos.tokens.USDT, legos.tokens.WBTC, legos.tokens.RENBTC],
+          [0, 1, 2, 0, 1],
+        ),
+    ).to.revertedWith("caller is not the operator");
+  });
+  it.only("operator can setTokenIndexes", async function () {
+    await this.curveStableSwapAdapter
+      .connect(this.signers.operator)
+      .setTokenIndexes(
+        [
+          legos.curve.CurveStableSwap.pools["dai+usdc+usdt_am3Crv"].pool,
+          legos.curve.CurveStableSwap.pools["dai+usdc+usdt_am3Crv"].pool,
+          legos.curve.CurveStableSwap.pools["dai+usdc+usdt_am3Crv"].pool,
+          legos.curve.CurveStableSwap.pools["wbtc+renbtc_btcCrv"].pool,
+          legos.curve.CurveStableSwap.pools["wbtc+renbtc_btcCrv"].pool,
+        ],
+        [legos.tokens.DAI, legos.tokens.USDC, legos.tokens.USDT, legos.tokens.WBTC, legos.tokens.RENBTC],
+        [0, 1, 2, 0, 1],
+      );
+    expect(
+      await this.curveStableSwapAdapter.tokenIndexes(
+        legos.curve.CurveStableSwap.pools["dai+usdc+usdt_am3Crv"].pool,
+        legos.tokens.DAI,
+      ),
+    ).to.eq(0);
+    expect(
+      await this.curveStableSwapAdapter.tokenIndexes(
+        legos.curve.CurveStableSwap.pools["dai+usdc+usdt_am3Crv"].pool,
+        legos.tokens.USDC,
+      ),
+    ).to.eq(1);
+    expect(
+      await this.curveStableSwapAdapter.tokenIndexes(
+        legos.curve.CurveStableSwap.pools["dai+usdc+usdt_am3Crv"].pool,
+        legos.tokens.USDT,
+      ),
+    ).to.eq(2);
+    expect(
+      await this.curveStableSwapAdapter.tokenIndexes(
+        legos.curve.CurveStableSwap.pools["wbtc+renbtc_btcCrv"].pool,
+        legos.tokens.WBTC,
+      ),
+    ).to.eq(0);
+    expect(
+      await this.curveStableSwapAdapter.tokenIndexes(
+        legos.curve.CurveStableSwap.pools["wbtc+renbtc_btcCrv"].pool,
+        legos.tokens.RENBTC,
+      ),
+    ).to.eq(1);
+  });
+}
+
+export function shouldSetNoZeroAllowanceAllowedLikeCurveStableSwapAdapter(): void {
+  it.only("non-operator cannot setNoZeroAllowanceAllowed", async function () {
+    await expect(
+      this.curveStableSwapAdapter
+        .connect(this.signers.alice)
+        .setNoZeroAllowanceAllowed([getAddress("0xc4a25b0113ffb29f706f75a188dc6d9a41f10849")], [true]),
+    ).to.revertedWith("caller is not the operator");
+  });
+  it.only("operator can setNoZeroAllowanceAllowed", async function () {
+    await this.curveStableSwapAdapter
+      .connect(this.signers.operator)
+      .setNoZeroAllowanceAllowed([getAddress("0xc4a25b0113ffb29f706f75a188dc6d9a41f10849")], [true]);
+    expect(
+      await this.curveStableSwapAdapter.noZeroAllowanceAllowed(
+        getAddress("0xc4a25b0113ffb29f706f75a188dc6d9a41f10849"),
+      ),
+    ).to.be.true;
+  });
+}
+
+export function shouldSetCalcWithdrawOneCoinNotSameLikeCurveStableSwapAdapter(): void {
+  it.only("non-operator cannot setCalcWithdrawOneCoinNotSame", async function () {
+    await expect(
+      this.curveStableSwapAdapter
+        .connect(this.signers.alice)
+        .setCalcWithdrawOneCoinNotSame([getAddress("0xc4a25b0113ffb29f706f75a188dc6d9a41f10849")], [true]),
+    ).to.revertedWith("caller is not the operator");
+  });
+  it.only("operator can setCalcWithdrawOneCoinNotSame", async function () {
+    await this.curveStableSwapAdapter
+      .connect(this.signers.operator)
+      .setCalcWithdrawOneCoinNotSame([getAddress("0xc4a25b0113ffb29f706f75a188dc6d9a41f10849")], [true]);
+    expect(
+      await this.curveStableSwapAdapter.calcWithdrawOneCoinNotSame(
+        getAddress("0xc4a25b0113ffb29f706f75a188dc6d9a41f10849"),
+      ),
+    ).to.be.true;
   });
 }

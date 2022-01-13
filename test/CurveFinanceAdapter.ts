@@ -9,6 +9,9 @@ import {
   shouldHaveUnderlyingTokensLikeCurveStableSwapAdapter,
   stableSwappedWrappedTokens,
   shouldInitializeVariablesLikeCurveStableSwapAdapter,
+  shouldSetTokenIndexesLikeCurveStableSwapAdapter,
+  shouldSetNoZeroAllowanceAllowedLikeCurveStableSwapAdapter,
+  shouldSetCalcWithdrawOneCoinNotSameLikeCurveStableSwapAdapter,
 } from "./CurveStableSwapAdapter.behaviour";
 import { shouldBehaveLikeCurveFactoryMetapoolAdapter } from "./CurveFactoryMetapoolAdapter.behaviour";
 import { shouldBehaveLikeCurveGaugeAdapter } from "./CurveGaugeAdapter.behaviour";
@@ -33,6 +36,7 @@ describe("Curve on Polygon", function () {
   before(async function () {
     this.signers = {} as Signers;
     const signers: SignerWithAddress[] = await hre.ethers.getSigners();
+    this.signers.alice = signers[1];
     this.signers.deployer = signers[2];
     this.signers.operator = signers[8];
     this.signers.riskOperator = signers[9];
@@ -53,6 +57,9 @@ describe("Curve on Polygon", function () {
       );
     });
     shouldInitializeVariablesLikeCurveStableSwapAdapter();
+    shouldSetTokenIndexesLikeCurveStableSwapAdapter();
+    shouldSetNoZeroAllowanceAllowedLikeCurveStableSwapAdapter();
+    shouldSetCalcWithdrawOneCoinNotSameLikeCurveStableSwapAdapter();
     Object.keys(CurveStableSwapPools).map((token: string) => {
       const poolItem: PoolItem = (CurveStableSwapPools as LiquidityPool)[token];
       if (poolItem.tokens.length == 1) {
