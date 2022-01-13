@@ -17,13 +17,13 @@ export const stableSwappedWrappedTokens = [
   "0x1a13F4Ca1d028320A707D99520AbFefca3998b7F",
   "0x60D55F02A771d515e077c9C2403a1ef324885CeC",
   "0x5c2ed810328349100A66B82b78a1791B101C9D61",
-  "0xDBf31dF14B66535aF65AaC99C32e9eA844e14501",
 ];
 
 export function shouldBehaveLikeCurveStableSwapAdapter(token: string, pool: PoolItem): void {
   it.only(`${token}, pool address : ${pool.pool}, lpToken address : ${pool.lpToken}`, async function () {
     // underlying token instance
     const underlyingTokenInstance = await hre.ethers.getContractAt("ERC20", pool.tokens[0]);
+    const underlyingTokenDecimals = await underlyingTokenInstance.decimals();
     // underlying token decimals
     // const underlyingTokenDecimals = await underlyingTokenInstance.decimals();
     // stable swap's pool instance
@@ -46,13 +46,12 @@ export function shouldBehaveLikeCurveStableSwapAdapter(token: string, pool: Pool
     const balanceOfUnderlyingTokenInTestDefiAdapter = await underlyingTokenInstance.balanceOf(
       this.testDeFiAdapterForStableSwap.address,
     );
-    // 0.1 setWrappedTokens
 
-    // 0.2 setTokenIndexes
+    // 0.1 setTokenIndexes
 
-    // 0.3 setNoZeroAllowanceAllowed
+    // 0.2 setNoZeroAllowanceAllowed
 
-    // 0.4 setCalcWithdrawOneCoinNotSame
+    // 0.3 setCalcWithdrawOneCoinNotSame
 
     // 1. lpToken
     expect(await this.curveStableSwapAdapter.getLiquidityPoolToken(ethers.constants.AddressZero, pool.pool)).to.eq(
@@ -64,7 +63,7 @@ export function shouldBehaveLikeCurveStableSwapAdapter(token: string, pool: Pool
     const _totalSupply = await lpTokenInstance.totalSupply();
     const expectedPoolValue = await _virtualPrice.mul(_totalSupply).div(BigNumber.from("10").pow("18"));
     expect(actualPoolValue).to.eq(expectedPoolValue);
-    // 3. Deposit All underlying tokens
+    // ============================================
     let calculatedlpTokenAmount: BigNumber = BigNumber.from(0);
     if (nTokens[pool.pool] == "3" && pool.tokenIndexes[0] == "0") {
       calculatedlpTokenAmount = await stableSwap3Instance.calc_token_amount(
@@ -92,13 +91,23 @@ export function shouldBehaveLikeCurveStableSwapAdapter(token: string, pool: Pool
         true,
       );
     }
+    // ===========================================================
+    // 3. calculate amount in lp token
+    expect(
+      await this.curveStableSwapAdapter.calculateAmountInLPToken(
+        underlyingTokenInstance.address,
+        pool.pool,
+        balanceOfUnderlyingTokenInTestDefiAdapter,
+      ),
+    ).to.eq(calculatedlpTokenAmount);
+    // 4. Deposit All underlying tokens
     await this.testDeFiAdapterForStableSwap.testGetDepositSomeCodes(
       underlyingTokenInstance.address,
       pool.pool,
       this.curveStableSwapAdapter.address,
       balanceOfUnderlyingTokenInTestDefiAdapter,
     );
-    // 4. assert whether lptoken balance is as expected or not after deposit
+    // 5. assert whether lptoken balance is as expected or not after deposit
     const actuallpTokenBalance = await lpTokenInstance.balanceOf(this.testDeFiAdapterForStableSwap.address);
     expect(actuallpTokenBalance).to.gte(calculatedlpTokenAmount.mul(95).div(100));
     const expectedlpTokenBalance = await this.curveStableSwapAdapter.getLiquidityPoolTokenBalance(
@@ -108,16 +117,64 @@ export function shouldBehaveLikeCurveStableSwapAdapter(token: string, pool: Pool
     );
     expect(expectedlpTokenBalance).to.eq(actuallpTokenBalance);
 
-    // 5. all amount in token
-
-    // 6. some amount in token
-
-    // 7. calculate amount in lp token
+    // 6. all amount in token
+    const expectedAllAmountInToken = await stableSwap2Instance.calc_withdraw_one_coin(
+      actuallpTokenBalance,
+      pool.tokenIndexes[0],
+    );
+    const actualAllAmountInToken = await this.curveStableSwapAdapter.getAllAmountInToken(
+      this.testDeFiAdapterForStableSwap.address,
+      underlyingTokenInstance.address,
+      pool.pool,
+    );
+    expect(actualAllAmountInToken).to.eq(expectedAllAmountInToken);
+    // 7. some amount in token
+    const expectedSomeAmountInToken = await stableSwap2Instance.calc_withdraw_one_coin(
+      actuallpTokenBalance.mul(25).div(100),
+      pool.tokenIndexes[0],
+    );
+    const actualSomeAmountInToken = await this.curveStableSwapAdapter.getSomeAmountInToken(
+      underlyingTokenInstance.address,
+      pool.pool,
+      actuallpTokenBalance.mul(25).div(100),
+    );
+    expect(actualSomeAmountInToken).to.eq(expectedSomeAmountInToken);
 
     // 8. calculateRedeemableLPTokenAmount
+    expect(
+      await this.curveStableSwapAdapter.calculateRedeemableLPTokenAmount(
+        this.testDeFiAdapterForStableSwap.address,
+        underlyingTokenInstance.address,
+        pool.pool,
+        actualAllAmountInToken,
+      ),
+    ).to.eq(BigNumber.from(actuallpTokenBalance.mul(actualAllAmountInToken).div(actualAllAmountInToken)).add("1"));
 
     // 9. isRedeemableAmountSufficient
-
+    expect(
+      await this.curveStableSwapAdapter.isRedeemableAmountSufficient(
+        this.testDeFiAdapterForStableSwap.address,
+        underlyingTokenInstance.address,
+        pool.pool,
+        actualAllAmountInToken,
+      ),
+    ).to.be.true;
+    expect(
+      await this.curveStableSwapAdapter.isRedeemableAmountSufficient(
+        this.testDeFiAdapterForStableSwap.address,
+        underlyingTokenInstance.address,
+        pool.pool,
+        actualSomeAmountInToken,
+      ),
+    ).to.be.true;
+    expect(
+      await this.curveStableSwapAdapter.isRedeemableAmountSufficient(
+        this.testDeFiAdapterForStableSwap.address,
+        underlyingTokenInstance.address,
+        pool.pool,
+        actualAllAmountInToken.add(BigNumber.from("3").pow(underlyingTokenDecimals)),
+      ),
+    ).to.be.false;
     // 10. getRewardToken
     expect(await this.curveStableSwapAdapter.getRewardToken(ethers.constants.AddressZero)).to.eq(
       ethers.constants.AddressZero,
@@ -125,9 +182,7 @@ export function shouldBehaveLikeCurveStableSwapAdapter(token: string, pool: Pool
 
     // 11. canStake
     expect(await this.curveStableSwapAdapter.canStake(ethers.constants.AddressZero)).to.false;
-    // 12.
-
-    // 13. Withdraw all lpToken balance
+    // 12. Withdraw all lpToken balance
     const calculatedUnderlyingTokenBalanceAfterWithdraw = await stableSwap3Instance.calc_withdraw_one_coin(
       actuallpTokenBalance,
       pool.tokenIndexes[0],

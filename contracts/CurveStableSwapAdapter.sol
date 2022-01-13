@@ -302,9 +302,20 @@ contract CurveStableSwapAdapter is IAdapter, AdapterInvestLimitBase {
         uint256 _underlyingTokenAmount
     ) external view override returns (uint256) {
         if (_underlyingTokenAmount > 0) {
-            uint256 _virtualPrice = ICurve2StableSwap(_liquidityPool).get_virtual_price();
-            uint256 _decimals = ERC20(_underlyingToken).decimals();
-            return (10**18 * _underlyingTokenAmount * 10**(18 - _decimals)) / _virtualPrice;
+            uint256 _nCoins = nTokens[_liquidityPool];
+            address[8] memory _underlyingTokens = underlyingCoins[_liquidityPool];
+            uint256[] memory _amounts = new uint256[](_nCoins);
+            for (uint256 _i; _i < _nCoins; _i++) {
+                if (_underlyingTokens[_i] == _underlyingToken) {
+                    _amounts[_i] = _underlyingTokenAmount;
+                }
+            }
+            if (_nCoins == 2) {
+                return ICurve2StableSwap(_liquidityPool).calc_token_amount([_amounts[0], _amounts[1]], true);
+            } else if (_nCoins == 3) {
+                return
+                    ICurve3StableSwap(_liquidityPool).calc_token_amount([_amounts[0], _amounts[1], _amounts[2]], true);
+            }
         }
         return uint256(0);
     }
