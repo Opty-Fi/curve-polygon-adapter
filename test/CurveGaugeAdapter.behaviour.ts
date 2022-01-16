@@ -1,6 +1,7 @@
 import { expect } from "chai";
 import { BigNumber } from "ethers";
 import hre, { ethers } from "hardhat";
+import { legos } from "@optyfi/defi-legos/polygon";
 import { ICurveGauge } from "../typechain";
 import { GaugeItem } from "./types";
 import { setTokenBalanceInStorage } from "./utils";
@@ -110,9 +111,13 @@ export function shouldBehaveLikeCurveGaugeAdapter(token: string, pool: GaugeItem
       ),
     ).to.be.false;
     // 10. getRewardToken
-    // expect(await this.curveStableSwapAdapter.getRewardToken(ethers.constants.AddressZero)).to.eq(
-    //   ethers.constants.AddressZero,
-    // );
+    expect(await this.curveGaugeAdapter.getRewardToken(ethers.constants.AddressZero)).to.eq(
+      ethers.constants.AddressZero,
+    );
+    expect(await this.curveGaugeAdapter.getRewardTokens(pool.pool)).to.have.members([
+      legos.tokens.CRV,
+      legos.tokens.WMATIC,
+    ]);
     // 11. canStake
     expect(await this.curveGaugeAdapter.canStake(ethers.constants.AddressZero)).to.false;
     // 12. Withdraw all lpToken balance
@@ -135,5 +140,115 @@ export function shouldBehaveLikeCurveGaugeAdapter(token: string, pool: GaugeItem
       this.testDeFiAdapterForGauge.address,
     );
     expect(actualUnderlyingTokenBalanceAfterWithdraw).eq(calculatedUnderlyingTokenBalanceAfterWithdraw);
+  });
+}
+
+export function shouldInitializeVariablesLikeCurveGaugeAdapter(): void {
+  it("assert constructor initialized logic", async function () {
+    expect(await this.curveGaugeAdapter.rewardTokens(legos.curve.CurveGauge.pools["am3CRV-gauge"].pool, 0)).to.eq(
+      legos.tokens.CRV,
+    );
+    expect(await this.curveGaugeAdapter.rewardTokens(legos.curve.CurveGauge.pools["am3CRV-gauge"].pool, 1)).to.eq(
+      legos.tokens.WMATIC,
+    );
+    expect(await this.curveGaugeAdapter.nRewardTokens(legos.curve.CurveGauge.pools["am3CRV-gauge"].pool)).to.eq(2);
+    expect(await this.curveGaugeAdapter.rewardTokens(legos.curve.CurveGauge.pools["btcCRV-gauge"].pool, 0)).to.eq(
+      legos.tokens.CRV,
+    );
+    expect(await this.curveGaugeAdapter.rewardTokens(legos.curve.CurveGauge.pools["btcCRV-gauge"].pool, 1)).to.eq(
+      legos.tokens.WMATIC,
+    );
+    expect(await this.curveGaugeAdapter.nRewardTokens(legos.curve.CurveGauge.pools["btcCRV-gauge"].pool)).to.eq(2);
+    expect(
+      await this.curveGaugeAdapter.rewardTokens(legos.curve.CurveGauge.pools["crvUSDBTCETH_1-gauge"].pool, 0),
+    ).to.eq(legos.tokens.CRV);
+    expect(
+      await this.curveGaugeAdapter.rewardTokens(legos.curve.CurveGauge.pools["crvUSDBTCETH_1-gauge"].pool, 1),
+    ).to.eq(legos.tokens.WMATIC);
+    expect(await this.curveGaugeAdapter.nRewardTokens(legos.curve.CurveGauge.pools["crvUSDBTCETH_1-gauge"].pool)).to.eq(
+      2,
+    );
+  });
+}
+
+export function shouldSetRewardTokensLikeCurveGaugeAdapter(): void {
+  it("non-operator cannot setRewardTokens", async function () {
+    await expect(
+      this.curveGaugeAdapter
+        .connect(this.signers.alice)
+        .setRewardTokens(
+          [
+            legos.curve.CurveGauge.pools["am3CRV-gauge"].pool,
+            legos.curve.CurveGauge.pools["am3CRV-gauge"].pool,
+            legos.curve.CurveGauge.pools["btcCRV-gauge"].pool,
+            legos.curve.CurveGauge.pools["btcCRV-gauge"].pool,
+            legos.curve.CurveGauge.pools["crvUSDBTCETH_1-gauge"].pool,
+            legos.curve.CurveGauge.pools["crvUSDBTCETH_1-gauge"].pool,
+          ],
+          [0, 1, 0, 1, 0, 1],
+          [
+            legos.tokens.CRV,
+            legos.tokens.WMATIC,
+            legos.tokens.CRV,
+            legos.tokens.WMATIC,
+            legos.tokens.CRV,
+            legos.tokens.WMATIC,
+          ],
+        ),
+    ).to.be.revertedWith("caller is not the operator");
+  });
+  it("setRewardTokens", async function () {
+    await this.curveGaugeAdapter
+      .connect(this.signers.operator)
+      .setRewardTokens(
+        [
+          legos.curve.CurveGauge.pools["am3CRV-gauge"].pool,
+          legos.curve.CurveGauge.pools["am3CRV-gauge"].pool,
+          legos.curve.CurveGauge.pools["btcCRV-gauge"].pool,
+          legos.curve.CurveGauge.pools["btcCRV-gauge"].pool,
+          legos.curve.CurveGauge.pools["crvUSDBTCETH_1-gauge"].pool,
+          legos.curve.CurveGauge.pools["crvUSDBTCETH_1-gauge"].pool,
+        ],
+        [0, 1, 0, 1, 0, 1],
+        [
+          legos.tokens.CRV,
+          legos.tokens.WMATIC,
+          legos.tokens.CRV,
+          legos.tokens.WMATIC,
+          legos.tokens.CRV,
+          legos.tokens.WMATIC,
+        ],
+      );
+    shouldInitializeVariablesLikeCurveGaugeAdapter();
+  });
+}
+
+export function shouldSetNRewardTokensLikeCurveGaugeAdapter(): void {
+  it("non-operator cannot setNRewardTokens", async function () {
+    await expect(
+      this.curveGaugeAdapter
+        .connect(this.signers.alice)
+        .setNRewardToken(
+          [
+            legos.curve.CurveGauge.pools["am3CRV-gauge"].pool,
+            legos.curve.CurveGauge.pools["btcCRV-gauge"].pool,
+            legos.curve.CurveGauge.pools["crvUSDBTCETH_1-gauge"].pool,
+          ],
+          [2, 2, 2],
+        ),
+    ).to.be.revertedWith("caller is not the operator");
+  });
+  it("setNRewardTokens", async function () {
+    await this.curveGaugeAdapter
+      .connect(this.signers.operator)
+      .setNRewardToken(
+        [
+          legos.curve.CurveGauge.pools["am3CRV-gauge"].pool,
+          legos.curve.CurveGauge.pools["btcCRV-gauge"].pool,
+          legos.curve.CurveGauge.pools["crvUSDBTCETH_1-gauge"].pool,
+        ],
+        [2, 2, 2],
+      );
+    shouldInitializeVariablesLikeCurveGaugeAdapter();
   });
 }

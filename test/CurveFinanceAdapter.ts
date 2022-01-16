@@ -14,7 +14,12 @@ import {
   shouldSetCalcWithdrawOneCoinNotSameLikeCurveStableSwapAdapter,
 } from "./CurveStableSwapAdapter.behaviour";
 import { shouldBehaveLikeCurveFactoryMetapoolAdapter } from "./CurveFactoryMetapoolAdapter.behaviour";
-import { shouldBehaveLikeCurveGaugeAdapter } from "./CurveGaugeAdapter.behaviour";
+import {
+  shouldBehaveLikeCurveGaugeAdapter,
+  shouldInitializeVariablesLikeCurveGaugeAdapter,
+  shouldSetRewardTokensLikeCurveGaugeAdapter,
+  shouldSetNRewardTokensLikeCurveGaugeAdapter,
+} from "./CurveGaugeAdapter.behaviour";
 import { shouldBehaveLikeCurveATriCryptoSwapAdapter } from "./CurveATriCryptoSwapAdapter.behaviour";
 import { shouldBehaveLikeCurveATriCryptoZapAdapter } from "./CurveATriCryptoZapAdapter.behaviour";
 // types
@@ -92,7 +97,7 @@ describe("Curve on Polygon", function () {
       }
     });
   });
-  describe("CurveGaugeAdapter", function () {
+  describe.only("CurveGaugeAdapter", function () {
     before(async function () {
       const curveGaugeArtifact: Artifact = await hre.artifacts.readArtifact("CurveGaugeAdapter");
       this.curveGaugeAdapter = <CurveGaugeAdapter>(
@@ -102,6 +107,9 @@ describe("Curve on Polygon", function () {
         await hre.waffle.deployContract(this.signers.deployer, this.testDeFiAdapterArtifact)
       );
     });
+    shouldInitializeVariablesLikeCurveGaugeAdapter();
+    shouldSetRewardTokensLikeCurveGaugeAdapter();
+    shouldSetNRewardTokensLikeCurveGaugeAdapter();
     Object.keys(CurveGauges).map((token: string) => {
       const poolItem: GaugeItem = (CurveGauges as GaugePool)[token];
       if (poolItem.tokens.length == 1) {
