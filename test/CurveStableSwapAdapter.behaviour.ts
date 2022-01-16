@@ -22,11 +22,12 @@ export const stableSwappedWrappedTokens = [
 ];
 
 export function shouldBehaveLikeCurveStableSwapAdapter(token: string, pool: PoolItem): void {
-  it.only(`${token}, pool address : ${pool.pool}, lpToken address : ${pool.lpToken}`, async function () {
+  it(`${token}, pool address : ${pool.pool}, lpToken address : ${pool.lpToken}`, async function () {
     // underlying token instance
     const underlyingTokenInstance = await hre.ethers.getContractAt("ERC20", pool.tokens[0]);
-    const underlyingTokenDecimals = await underlyingTokenInstance.decimals();
     // underlying token decimals
+    const underlyingTokenDecimals = await underlyingTokenInstance.decimals();
+
     // stable swap's pool instance
     const stableSwap3Instance = <ICurve3StableSwap>await hre.ethers.getContractAt("ICurve3StableSwap", pool.pool);
     const stableSwap2Instance = <ICurve2StableSwap>await hre.ethers.getContractAt("ICurve2StableSwap", pool.pool);
@@ -53,7 +54,7 @@ export function shouldBehaveLikeCurveStableSwapAdapter(token: string, pool: Pool
     const actualPoolValue = await this.curveStableSwapAdapter.getPoolValue(pool.pool, ethers.constants.AddressZero);
     const _virtualPrice = await stableSwap2Instance.get_virtual_price();
     const _totalSupply = await lpTokenInstance.totalSupply();
-    const expectedPoolValue = await _virtualPrice.mul(_totalSupply).div(BigNumber.from("10").pow("18"));
+    const expectedPoolValue = _virtualPrice.mul(_totalSupply).div(BigNumber.from("10").pow("18"));
     expect(actualPoolValue).to.eq(expectedPoolValue);
     // ============================================
     let calculatedlpTokenAmount: BigNumber = BigNumber.from(0);
@@ -201,7 +202,7 @@ export function shouldBehaveLikeCurveStableSwapAdapter(token: string, pool: Pool
 }
 
 export function shouldHaveUnderlyingTokensLikeCurveStableSwapAdapter(pool: PoolItem): void {
-  it.only(`underlyingtokens test, pool address : ${pool.pool}, lpToken address : ${pool.lpToken}`, async function () {
+  it(`underlyingtokens test, pool address : ${pool.pool}, lpToken address : ${pool.lpToken}`, async function () {
     expect(
       await this.curveStableSwapAdapter.getUnderlyingTokens(pool.pool, ethers.constants.AddressZero),
     ).to.have.members(pool.tokens);
@@ -209,7 +210,7 @@ export function shouldHaveUnderlyingTokensLikeCurveStableSwapAdapter(pool: PoolI
 }
 
 export function shouldInitializeVariablesLikeCurveStableSwapAdapter(): void {
-  it.only("assert constructor initialized logic", async function () {
+  it("assert constructor initialized logic", async function () {
     expect(
       await this.curveStableSwapAdapter.tokenIndexes(
         legos.curve.CurveStableSwap.pools["dai+usdc+usdt_am3Crv"].pool,
@@ -281,7 +282,7 @@ export function shouldInitializeVariablesLikeCurveStableSwapAdapter(): void {
 }
 
 export function shouldSetTokenIndexesLikeCurveStableSwapAdapter(): void {
-  it.only("non-operator cannot setTokenIndexes", async function () {
+  it("non-operator cannot setTokenIndexes", async function () {
     await expect(
       this.curveStableSwapAdapter
         .connect(this.signers.alice)
@@ -298,7 +299,7 @@ export function shouldSetTokenIndexesLikeCurveStableSwapAdapter(): void {
         ),
     ).to.revertedWith("caller is not the operator");
   });
-  it.only("operator can setTokenIndexes", async function () {
+  it("operator can setTokenIndexes", async function () {
     await this.curveStableSwapAdapter
       .connect(this.signers.operator)
       .setTokenIndexes(
@@ -346,14 +347,14 @@ export function shouldSetTokenIndexesLikeCurveStableSwapAdapter(): void {
 }
 
 export function shouldSetNoZeroAllowanceAllowedLikeCurveStableSwapAdapter(): void {
-  it.only("non-operator cannot setNoZeroAllowanceAllowed", async function () {
+  it("non-operator cannot setNoZeroAllowanceAllowed", async function () {
     await expect(
       this.curveStableSwapAdapter
         .connect(this.signers.alice)
         .setNoZeroAllowanceAllowed([getAddress("0xc4a25b0113ffb29f706f75a188dc6d9a41f10849")], [true]),
     ).to.revertedWith("caller is not the operator");
   });
-  it.only("operator can setNoZeroAllowanceAllowed", async function () {
+  it("operator can setNoZeroAllowanceAllowed", async function () {
     await this.curveStableSwapAdapter
       .connect(this.signers.operator)
       .setNoZeroAllowanceAllowed([getAddress("0xc4a25b0113ffb29f706f75a188dc6d9a41f10849")], [true]);
@@ -366,14 +367,14 @@ export function shouldSetNoZeroAllowanceAllowedLikeCurveStableSwapAdapter(): voi
 }
 
 export function shouldSetCalcWithdrawOneCoinNotSameLikeCurveStableSwapAdapter(): void {
-  it.only("non-operator cannot setCalcWithdrawOneCoinNotSame", async function () {
+  it("non-operator cannot setCalcWithdrawOneCoinNotSame", async function () {
     await expect(
       this.curveStableSwapAdapter
         .connect(this.signers.alice)
         .setCalcWithdrawOneCoinNotSame([getAddress("0xc4a25b0113ffb29f706f75a188dc6d9a41f10849")], [true]),
     ).to.revertedWith("caller is not the operator");
   });
-  it.only("operator can setCalcWithdrawOneCoinNotSame", async function () {
+  it("operator can setCalcWithdrawOneCoinNotSame", async function () {
     await this.curveStableSwapAdapter
       .connect(this.signers.operator)
       .setCalcWithdrawOneCoinNotSame([getAddress("0xc4a25b0113ffb29f706f75a188dc6d9a41f10849")], [true]);

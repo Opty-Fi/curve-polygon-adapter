@@ -3,14 +3,16 @@
 pragma solidity =0.8.11;
 
 //  helper contracts
-import "./utils/AdapterInvestLimitBase.sol";
+import "./utils/AdapterModifiersBase.sol";
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
 // interfaces
 import { IAdapter, IAdapterV2 } from "./utils/interfaces/IAdapterV2.sol";
 import { IAdapterHarvestReward, IAdapterHarvestRewardV2 } from "./utils/interfaces/IAdapterHarvestRewardV2.sol";
 import { ICurveGauge } from "@optyfi/defi-legos/polygon/curve/contracts/ICurveGauge.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 
-contract CurveGaugeAdapter is AdapterInvestLimitBase, IAdapterV2, IAdapterHarvestRewardV2 {
+contract CurveGaugeAdapter is AdapterModifiersBase, IAdapterV2, IAdapterHarvestRewardV2 {
     using Address for address;
     /**
      * @notice Uniswap V2 router contract address
