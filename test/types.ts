@@ -5,6 +5,7 @@ import { CurveGaugeAdapter, CurveStableSwapAdapter, TestDeFiAdapter } from "../t
 import { CurveATriCryptoSwapAdapter } from "../typechain/CurveATriCryptoSwapAdapter";
 import { CurveATriCryptoZapAdapter } from "../typechain/CurveATriCryptoZapAdapter";
 import { CurveMetapoolFactoryAdapter } from "../typechain/CurveMetapoolFactoryAdapter";
+import { ICurveL2Factory } from "../typechain/ICurveL2Factory";
 
 export interface Signers {
   admin: SignerWithAddress;
@@ -50,7 +51,7 @@ declare module "mocha" {
     curveCryptoATriSwapAdapter: CurveATriCryptoSwapAdapter;
     curveCryptoATriZapAdapter: CurveATriCryptoZapAdapter;
     curveGaugeAdapter: CurveGaugeAdapter;
-    curveMetapoolFactoryAdapter: CurveMetapoolFactoryAdapter;
+    curveFactoryMetapoolAdapter: CurveMetapoolFactoryAdapter;
     curveStableSwapAdapter: CurveStableSwapAdapter;
     testDeFiAdapterArtifact: Artifact;
     testDeFiAdapterForATriCryptoSwap: TestDeFiAdapter;
@@ -58,6 +59,7 @@ declare module "mocha" {
     testDeFiAdapterForGauge: TestDeFiAdapter;
     testDeFiAdapterForMetapoolFactory: TestDeFiAdapter;
     testDeFiAdapterForStableSwap: TestDeFiAdapter;
+    curveL2MetapoolFactory: ICurveL2Factory;
     mockRegistry: MockContract;
     loadFixture: <T>(fixture: Fixture<T>) => Promise<T>;
     signers: Signers;

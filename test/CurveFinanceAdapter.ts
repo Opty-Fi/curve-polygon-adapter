@@ -28,6 +28,8 @@ import { CurveGaugeAdapter, CurveStableSwapAdapter, TestDeFiAdapter } from "../t
 import { CurveMetapoolFactoryAdapter } from "../typechain/CurveMetapoolFactoryAdapter";
 import { CurveATriCryptoSwapAdapter } from "../typechain/CurveATriCryptoSwapAdapter";
 import { CurveATriCryptoZapAdapter } from "../typechain/CurveATriCryptoZapAdapter";
+import { legos } from "@optyfi/defi-legos/polygon";
+import { ICurveL2Factory } from "../typechain/ICurveL2Factory";
 
 const {
   CurveATriCryptoSwap: { pools: CurveATriCryptoSwapPools },
@@ -51,7 +53,7 @@ describe("Curve on Polygon", function () {
     await this.mockRegistry.mock.getRiskOperator.returns(this.signers.riskOperator.address);
     this.testDeFiAdapterArtifact = await hre.artifacts.readArtifact("TestDeFiAdapter");
   });
-  describe.only("CurveStableSwapAdapter", function () {
+  describe("CurveStableSwapAdapter", function () {
     before(async function () {
       const curveStableAdapterArtifact: Artifact = await hre.artifacts.readArtifact("CurveStableSwapAdapter");
       this.curveStableSwapAdapter = <CurveStableSwapAdapter>(
@@ -89,6 +91,9 @@ describe("Curve on Polygon", function () {
       this.testDeFiAdapterForMetapoolFactory = <TestDeFiAdapter>(
         await hre.waffle.deployContract(this.signers.deployer, this.testDeFiAdapterArtifact)
       );
+      this.curveL2MetapoolFactory = <ICurveL2Factory>(
+        await hre.ethers.getContractAt("ICurveL2Factory", legos.curve.CurveL2Factory.address)
+      );
     });
     Object.keys(CurveFactoryMetaPools).map((token: string) => {
       const poolItem: PoolItem = (CurveFactoryMetaPools as LiquidityPool)[token];
@@ -97,7 +102,7 @@ describe("Curve on Polygon", function () {
       }
     });
   });
-  describe.only("CurveGaugeAdapter", function () {
+  describe("CurveGaugeAdapter", function () {
     before(async function () {
       const curveGaugeArtifact: Artifact = await hre.artifacts.readArtifact("CurveGaugeAdapter");
       this.curveGaugeAdapter = <CurveGaugeAdapter>(

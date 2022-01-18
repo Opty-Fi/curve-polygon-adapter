@@ -203,9 +203,33 @@ contract CurveMetapoolFactoryAdapter is AdapterInvestLimitBase, IAdapter {
         uint256 _underlyingTokenAmount
     ) external view override returns (uint256) {
         if (_underlyingTokenAmount > 0) {
-            uint256 _virtualPrice = ICurve2StableSwapMetapoolFactory(_liquidityPool).get_virtual_price();
-            uint256 _decimals = ERC20(_underlyingToken).decimals();
-            return (10**18 * _underlyingTokenAmount * 10**(18 - _decimals)) / _virtualPrice;
+            uint256 _nCoins = _getNCoins(_liquidityPool);
+            address[4] memory _underlyingTokens = _getUnderlyingTokens(_liquidityPool);
+            uint256[] memory _amounts = new uint256[](_nCoins);
+            for (uint256 _i; _i < _nCoins; _i++) {
+                if (_underlyingTokens[_i] == _underlyingToken) {
+                    _amounts[_i] = _underlyingTokenAmount;
+                }
+            }
+            if (_nCoins == 2) {
+                return
+                    ICurve2StableSwapMetapoolFactory(_liquidityPool).calc_token_amount(
+                        [_amounts[0], _amounts[1]],
+                        true
+                    );
+            } else if (_nCoins == 3) {
+                return
+                    ICurve3StableSwapMetapoolFactory(_liquidityPool).calc_token_amount(
+                        [_amounts[0], _amounts[1], _amounts[2]],
+                        true
+                    );
+            } else if (_nCoins == 4) {
+                return
+                    ICurve4StableSwapMetapoolFactory(_liquidityPool).calc_token_amount(
+                        [_amounts[0], _amounts[1], _amounts[2], _amounts[3]],
+                        true
+                    );
+            }
         }
         return uint256(0);
     }
@@ -307,8 +331,7 @@ contract CurveMetapoolFactoryAdapter is AdapterInvestLimitBase, IAdapter {
             uint256 _nCoins,
             address[4] memory _underlyingTokens,
             uint256[] memory _amounts,
-            uint256 _codeLength,
-            uint256 _minMintAmount
+            uint256 _codeLength
         )
     {
         _nCoins = _getNCoins(_swapPool);
@@ -323,10 +346,6 @@ contract CurveMetapoolFactoryAdapter is AdapterInvestLimitBase, IAdapter {
                     _amount,
                     getPoolValue(_swapPool, address(0))
                 );
-                uint256 _decimals = ERC20(_underlyingToken).decimals();
-                _minMintAmount =
-                    (_amounts[_i] * 10**(uint256(36) - _decimals) * 95) /
-                    (ICurve2StableSwapMetapoolFactory(_swapPool).get_virtual_price() * 100);
                 if (_amounts[_i] > 0) {
                     if (noZeroAllowanceAllowed[_underlyingTokens[_i]]) {
                         _codeLength = 2;
@@ -354,8 +373,7 @@ contract CurveMetapoolFactoryAdapter is AdapterInvestLimitBase, IAdapter {
             uint256 _nCoins,
             address[4] memory _underlyingTokens,
             uint256[] memory _amounts,
-            uint256 _codeLength,
-            uint256 _minMintAmount
+            uint256 _codeLength
         ) = _getDepositCodeConfig(_underlyingToken, _liquidityPool, _amount);
         if (_codeLength > 1) {
             _codes = new bytes[](_codeLength);
@@ -381,18 +399,30 @@ contract CurveMetapoolFactoryAdapter is AdapterInvestLimitBase, IAdapter {
             }
             if (_nCoins == uint256(2)) {
                 uint256[2] memory _depositAmounts = [_amounts[0], _amounts[1]];
+                uint256 _minMintAmount = (ICurve2StableSwapMetapoolFactory(_liquidityPool).calc_token_amount(
+                    _depositAmounts,
+                    true
+                ) * 95) / 100;
                 _codes[_j] = abi.encode(
                     _liquidityPool,
                     abi.encodeWithSignature("add_liquidity(uint256[2],uint256)", _depositAmounts, _minMintAmount)
                 );
             } else if (_nCoins == uint256(3)) {
                 uint256[3] memory _depositAmounts = [_amounts[0], _amounts[1], _amounts[2]];
+                uint256 _minMintAmount = (ICurve3StableSwapMetapoolFactory(_liquidityPool).calc_token_amount(
+                    _depositAmounts,
+                    true
+                ) * 95) / 100;
                 _codes[_j] = abi.encode(
                     _liquidityPool,
                     abi.encodeWithSignature("add_liquidity(uint256[3],uint256)", _depositAmounts, _minMintAmount)
                 );
             } else if (_nCoins == uint256(4)) {
                 uint256[4] memory _depositAmounts = [_amounts[0], _amounts[1], _amounts[2], _amounts[3]];
+                uint256 _minMintAmount = (ICurve4StableSwapMetapoolFactory(_liquidityPool).calc_token_amount(
+                    _depositAmounts,
+                    true
+                ) * 95) / 100;
                 _codes[_j] = abi.encode(
                     _liquidityPool,
                     abi.encodeWithSignature("add_liquidity(uint256[4],uint256)", _depositAmounts, _minMintAmount)
