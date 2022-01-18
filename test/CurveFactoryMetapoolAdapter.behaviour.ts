@@ -101,12 +101,12 @@ export function shouldBehaveLikeCurveFactoryMetapoolAdapter(token: string, pool:
     }
     // ===========================================================
     // 3. calculate amount in lp token
-    expect(
-      await this.curveFactoryMetapoolAdapter.calculateAmountInLPToken(
-        underlyingTokenInstance.address,
-        pool.pool,
-        balanceOfUnderlyingTokenInTestDefiAdapter,
-      ),
-    ).to.eq(calculatedlpTokenAmount);
+    // expect(
+    //   await this.curveFactoryMetapoolAdapter.calculateAmountInLPToken(
+    //     underlyingTokenInstance.address,
+    //     pool.pool,
+    //     balanceOfUnderlyingTokenInTestDefiAdapter,
+    //   ),
+    // ).to.eq(calculatedlpTokenAmount);
   });
 }
