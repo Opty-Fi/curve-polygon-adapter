@@ -28,7 +28,7 @@ const tokenBalancesSlot = async (token: ERC20) => {
     }
   }
 
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 200; i++) {
     let slot = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(["uint256", "address"], [i, account]));
     while (slot.startsWith("0x0")) slot = "0x" + slot.slice(3);
 
