@@ -2,9 +2,9 @@ import { expect } from "chai";
 import { BigNumber } from "ethers";
 import hre, { ethers } from "hardhat";
 import { legos } from "@optyfi/defi-legos/polygon";
-import { ICurveGauge } from "../typechain";
+import { ERC20, ICurveGauge } from "../typechain";
 import { GaugeItem } from "./types";
-import { moveToNextBlock, setTokenBalanceInStorage } from "./utils";
+import { moveToSpecificBlock, setTokenBalanceInStorage } from "./utils";
 
 export function shouldBehaveLikeCurveGaugeAdapter(token: string, pool: GaugeItem): void {
   it(`${token}, gauge address : ${pool.pool}, lpToken address : ${pool.lpToken}`, async function () {
@@ -123,21 +123,12 @@ export function shouldBehaveLikeCurveGaugeAdapter(token: string, pool: GaugeItem
     ]);
     // 11. canStake
     expect(await this.curveGaugeAdapter.canStake(ethers.constants.AddressZero)).to.false;
-    // 13. claim
-    await moveToNextBlock();
-    await moveToNextBlock();
-    await moveToNextBlock();
-    await moveToNextBlock();
-    await moveToNextBlock();
-    await moveToNextBlock();
-    await moveToNextBlock();
-    await moveToNextBlock();
-    await moveToNextBlock();
-    await moveToNextBlock();
-    await this.testDeFiAdapterForGauge.testClaimRewardTokenCode(pool.pool, this.curveGaugeAdapter.address);
-    console.log("CRV ", await crvInstance.balanceOf(this.testDeFiAdapterForGauge.address));
-    console.log("WMATIC ", await wmaticInstance.balanceOf(this.testDeFiAdapterForGauge.address));
-    // 14. harvest
+
+    // ==============================================================
+    const blockNumber = await hre.ethers.provider.getBlockNumber();
+    const block = await hre.ethers.provider.getBlock(blockNumber);
+    await moveToSpecificBlock(block.timestamp + 2000000);
+    // ==============================================================
 
     // 12. Withdraw all lpToken balance
     const calculatedUnderlyingTokenBalanceAfterWithdraw = await gaugeInstance.balanceOf(
@@ -159,9 +150,43 @@ export function shouldBehaveLikeCurveGaugeAdapter(token: string, pool: GaugeItem
       this.testDeFiAdapterForGauge.address,
     );
     expect(actualUnderlyingTokenBalanceAfterWithdraw).eq(calculatedUnderlyingTokenBalanceAfterWithdraw);
+    // 13. claim
     await this.testDeFiAdapterForGauge.testClaimRewardTokenCode(pool.pool, this.curveGaugeAdapter.address);
-    console.log("CRV ", await crvInstance.balanceOf(this.testDeFiAdapterForGauge.address));
-    console.log("WMATIC ", await wmaticInstance.balanceOf(this.testDeFiAdapterForGauge.address));
+    const crvBalance = await crvInstance.balanceOf(this.testDeFiAdapterForGauge.address);
+    const wmaticBalance = await wmaticInstance.balanceOf(this.testDeFiAdapterForGauge.address);
+    // 14. harvest
+    let tokenUT: ERC20 = await hre.ethers.getContractAt("ERC20", legos.tokens.DAI);
+    if (pool.pool == legos.curve.CurveGauge.pools["btcCRV-gauge"].pool) {
+      tokenUT = await hre.ethers.getContractAt("ERC20", legos.tokens.WBTC);
+    }
+    if (pool.pool == legos.curve.CurveGauge.pools["crvUSDBTCETH_1-gauge"].pool) {
+      tokenUT = await hre.ethers.getContractAt("ERC20", legos.tokens.USDC);
+    }
+    if (crvBalance.gt(BigNumber.from("0"))) {
+      // harvest
+      const tokenUTBalanceBeforeHarvest = await tokenUT.balanceOf(this.testDeFiAdapterForGauge.address);
+      await this.testDeFiAdapterForGauge["testGetHarvestSomeCodes(address,address,address,uint256)"](
+        pool.pool,
+        tokenUT.address,
+        this.curveGaugeAdapter.address,
+        crvBalance,
+      );
+      const tokenUTBalanceAfterHarvest = await tokenUT.balanceOf(this.testDeFiAdapterForGauge.address);
+      expect(tokenUTBalanceAfterHarvest).gt(tokenUTBalanceBeforeHarvest);
+    }
+    if (wmaticBalance.gt(BigNumber.from("0"))) {
+      // harvest
+      const tokenUTBalanceBeforeHarvest = await tokenUT.balanceOf(this.testDeFiAdapterForGauge.address);
+      await this.testDeFiAdapterForGauge["testGetHarvestSomeCodes(address,address,address,address,uint256)"](
+        pool.pool,
+        tokenUT.address,
+        this.curveGaugeAdapter.address,
+        legos.tokens.WMATIC,
+        wmaticBalance,
+      );
+      const tokenUTBalanceAfterHarvest = await tokenUT.balanceOf(this.testDeFiAdapterForGauge.address);
+      expect(tokenUTBalanceAfterHarvest).gt(tokenUTBalanceBeforeHarvest);
+    }
   });
 }
 

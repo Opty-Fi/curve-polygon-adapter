@@ -51,7 +51,7 @@ describe("Curve on Polygon", function () {
     await this.mockRegistry.mock.getRiskOperator.returns(this.signers.riskOperator.address);
     this.testDeFiAdapterArtifact = await hre.artifacts.readArtifact("TestDeFiAdapter");
   });
-  describe("CurveStableSwapAdapter", function () {
+  describe.only("CurveStableSwapAdapter", function () {
     before(async function () {
       const curveStableAdapterArtifact: Artifact = await hre.artifacts.readArtifact("CurveStableSwapAdapter");
       this.curveStableSwapAdapter = <CurveStableSwapAdapter>(
@@ -78,7 +78,7 @@ describe("Curve on Polygon", function () {
       }
     });
   });
-  describe("CurveFactoryMetaPoolAdapter", function () {
+  describe.only("CurveFactoryMetaPoolAdapter", function () {
     before(async function () {
       const curveFactoryMetapoolArtifact: Artifact = await hre.artifacts.readArtifact("CurveMetapoolFactoryAdapter");
       this.curveFactoryMetapoolAdapter = <CurveMetapoolFactoryAdapter>(

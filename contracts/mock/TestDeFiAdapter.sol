@@ -4,6 +4,7 @@ pragma solidity =0.8.11;
 
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { IAdapterFull } from "@optyfi/defi-legos/interfaces/defiAdapters/contracts/IAdapterFull.sol";
+import { IAdapterHarvestRewardV2 } from "../utils/interfaces/IAdapterHarvestRewardV2.sol";
 
 import { MultiCall } from "../utils/MultiCall.sol";
 
@@ -73,6 +74,25 @@ contract TestDeFiAdapter is MultiCall {
                 payable(address(this)),
                 _underlyingToken,
                 _liquidityPool,
+                _rewardTokenAmount
+            ),
+            "harvestSome"
+        );
+    }
+
+    function testGetHarvestSomeCodes(
+        address _liquidityPool,
+        address _underlyingToken,
+        address _adapter,
+        address _rewardToken,
+        uint256 _rewardTokenAmount
+    ) external {
+        executeCodes(
+            IAdapterHarvestRewardV2(_adapter).getHarvestSomeCodes(
+                payable(address(this)),
+                _underlyingToken,
+                _liquidityPool,
+                _rewardToken,
                 _rewardTokenAmount
             ),
             "harvestSome"
