@@ -53,65 +53,65 @@ export function shouldBehaveLikeCurveFactoryMetapoolAdapter(token: string, pool:
       const expectedPoolValue = _virtualPrice.mul(_totalSupply).div(BigNumber.from("10").pow("18"));
       expect(actualPoolValue).to.eq(expectedPoolValue);
     } catch (error) {
-      console.error(error);
+      this.skip();
     }
 
     // ============================================
-    // let calculatedlpTokenAmount: BigNumber = BigNumber.from(0);
-    // if (_nTokens.eq(BigNumber.from("3")) && pool.tokenIndexes[0] == "0") {
-    //   calculatedlpTokenAmount = await curve3StableSwapMetapoolFactoryInstance.calc_token_amount(
-    //     [balanceOfUnderlyingTokenInTestDefiAdapter, 0, 0],
-    //     true,
-    //   );
-    // } else if (_nTokens.eq(BigNumber.from("3")) && pool.tokenIndexes[0] == "1") {
-    //   calculatedlpTokenAmount = await curve3StableSwapMetapoolFactoryInstance.calc_token_amount(
-    //     [0, balanceOfUnderlyingTokenInTestDefiAdapter, 0],
-    //     true,
-    //   );
-    // } else if (_nTokens.eq(BigNumber.from("3")) && pool.tokenIndexes[0] == "2") {
-    //   calculatedlpTokenAmount = await curve3StableSwapMetapoolFactoryInstance.calc_token_amount(
-    //     [0, 0, balanceOfUnderlyingTokenInTestDefiAdapter],
-    //     true,
-    //   );
-    // } else if (_nTokens.eq(BigNumber.from("2")) && pool.tokenIndexes[0] == "0") {
-    //   calculatedlpTokenAmount = await curve2StableSwapMetapoolFactoryInstance.calc_token_amount(
-    //     [balanceOfUnderlyingTokenInTestDefiAdapter, 0],
-    //     true,
-    //   );
-    // } else if (_nTokens.eq(BigNumber.from("2")) && pool.tokenIndexes[0] == "1") {
-    //   calculatedlpTokenAmount = await curve2StableSwapMetapoolFactoryInstance.calc_token_amount(
-    //     [0, balanceOfUnderlyingTokenInTestDefiAdapter],
-    //     true,
-    //   );
-    // } else if (_nTokens.eq(BigNumber.from("4")) && pool.tokenIndexes[0] == "0") {
-    //   calculatedlpTokenAmount = await curve4StableSwapMetapoolFactoryInstance.calc_token_amount(
-    //     [balanceOfUnderlyingTokenInTestDefiAdapter, 0, 0, 0],
-    //     true,
-    //   );
-    // } else if (_nTokens.eq(BigNumber.from("4")) && pool.tokenIndexes[0] == "1") {
-    //   calculatedlpTokenAmount = await curve4StableSwapMetapoolFactoryInstance.calc_token_amount(
-    //     [0, balanceOfUnderlyingTokenInTestDefiAdapter, 0, 0],
-    //     true,
-    //   );
-    // } else if (_nTokens.eq(BigNumber.from("4")) && pool.tokenIndexes[0] == "2") {
-    //   calculatedlpTokenAmount = await curve4StableSwapMetapoolFactoryInstance.calc_token_amount(
-    //     [0, 0, balanceOfUnderlyingTokenInTestDefiAdapter, 0],
-    //     true,
-    //   );
-    // } else if (_nTokens.eq(BigNumber.from("4")) && pool.tokenIndexes[0] == "3") {
-    //   calculatedlpTokenAmount = await curve4StableSwapMetapoolFactoryInstance.calc_token_amount(
-    //     [0, 0, 0, balanceOfUnderlyingTokenInTestDefiAdapter],
-    //     true,
-    //   );
-    // }
+    let calculatedlpTokenAmount: BigNumber = BigNumber.from(0);
+    if (_nTokens.eq(BigNumber.from("3")) && pool.tokenIndexes[0] == "0") {
+      calculatedlpTokenAmount = await curve3StableSwapMetapoolFactoryInstance.calc_token_amount(
+        [balanceOfUnderlyingTokenInTestDefiAdapter, 0, 0],
+        true,
+      );
+    } else if (_nTokens.eq(BigNumber.from("3")) && pool.tokenIndexes[0] == "1") {
+      calculatedlpTokenAmount = await curve3StableSwapMetapoolFactoryInstance.calc_token_amount(
+        [0, balanceOfUnderlyingTokenInTestDefiAdapter, 0],
+        true,
+      );
+    } else if (_nTokens.eq(BigNumber.from("3")) && pool.tokenIndexes[0] == "2") {
+      calculatedlpTokenAmount = await curve3StableSwapMetapoolFactoryInstance.calc_token_amount(
+        [0, 0, balanceOfUnderlyingTokenInTestDefiAdapter],
+        true,
+      );
+    } else if (_nTokens.eq(BigNumber.from("2")) && pool.tokenIndexes[0] == "0") {
+      calculatedlpTokenAmount = await curve2StableSwapMetapoolFactoryInstance.calc_token_amount(
+        [balanceOfUnderlyingTokenInTestDefiAdapter, 0],
+        true,
+      );
+    } else if (_nTokens.eq(BigNumber.from("2")) && pool.tokenIndexes[0] == "1") {
+      calculatedlpTokenAmount = await curve2StableSwapMetapoolFactoryInstance.calc_token_amount(
+        [0, balanceOfUnderlyingTokenInTestDefiAdapter],
+        true,
+      );
+    } else if (_nTokens.eq(BigNumber.from("4")) && pool.tokenIndexes[0] == "0") {
+      calculatedlpTokenAmount = await curve4StableSwapMetapoolFactoryInstance.calc_token_amount(
+        [balanceOfUnderlyingTokenInTestDefiAdapter, 0, 0, 0],
+        true,
+      );
+    } else if (_nTokens.eq(BigNumber.from("4")) && pool.tokenIndexes[0] == "1") {
+      calculatedlpTokenAmount = await curve4StableSwapMetapoolFactoryInstance.calc_token_amount(
+        [0, balanceOfUnderlyingTokenInTestDefiAdapter, 0, 0],
+        true,
+      );
+    } else if (_nTokens.eq(BigNumber.from("4")) && pool.tokenIndexes[0] == "2") {
+      calculatedlpTokenAmount = await curve4StableSwapMetapoolFactoryInstance.calc_token_amount(
+        [0, 0, balanceOfUnderlyingTokenInTestDefiAdapter, 0],
+        true,
+      );
+    } else if (_nTokens.eq(BigNumber.from("4")) && pool.tokenIndexes[0] == "3") {
+      calculatedlpTokenAmount = await curve4StableSwapMetapoolFactoryInstance.calc_token_amount(
+        [0, 0, 0, balanceOfUnderlyingTokenInTestDefiAdapter],
+        true,
+      );
+    }
     // ===========================================================
     // 3. calculate amount in lp token
-    // expect(
-    //   await this.curveFactoryMetapoolAdapter.calculateAmountInLPToken(
-    //     underlyingTokenInstance.address,
-    //     pool.pool,
-    //     balanceOfUnderlyingTokenInTestDefiAdapter,
-    //   ),
-    // ).to.eq(calculatedlpTokenAmount);
+    expect(
+      await this.curveFactoryMetapoolAdapter.calculateAmountInLPToken(
+        underlyingTokenInstance.address,
+        pool.pool,
+        balanceOfUnderlyingTokenInTestDefiAdapter,
+      ),
+    ).to.eq(calculatedlpTokenAmount);
   });
 }
