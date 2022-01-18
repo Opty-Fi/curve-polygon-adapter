@@ -4,13 +4,16 @@ import hre, { ethers } from "hardhat";
 import { legos } from "@optyfi/defi-legos/polygon";
 import { ICurveGauge } from "../typechain";
 import { GaugeItem } from "./types";
-import { setTokenBalanceInStorage } from "./utils";
+import { moveToNextBlock, setTokenBalanceInStorage } from "./utils";
 
 export function shouldBehaveLikeCurveGaugeAdapter(token: string, pool: GaugeItem): void {
   it(`${token}, gauge address : ${pool.pool}, lpToken address : ${pool.lpToken}`, async function () {
     // underlying token instance
     const underlyingTokenInstance = await hre.ethers.getContractAt("ERC20", pool.tokens[0]);
     const underlyingTokenDecimals = await underlyingTokenInstance.decimals();
+    // reward token instance
+    const crvInstance = await hre.ethers.getContractAt("ERC20", legos.tokens.CRV);
+    const wmaticInstance = await hre.ethers.getContractAt("ERC20", legos.tokens.WMATIC);
 
     // gauge instance
     const gaugeInstance = <ICurveGauge>await hre.ethers.getContractAt("ICurveGauge", pool.pool);
@@ -120,6 +123,22 @@ export function shouldBehaveLikeCurveGaugeAdapter(token: string, pool: GaugeItem
     ]);
     // 11. canStake
     expect(await this.curveGaugeAdapter.canStake(ethers.constants.AddressZero)).to.false;
+    // 13. claim
+    await moveToNextBlock();
+    await moveToNextBlock();
+    await moveToNextBlock();
+    await moveToNextBlock();
+    await moveToNextBlock();
+    await moveToNextBlock();
+    await moveToNextBlock();
+    await moveToNextBlock();
+    await moveToNextBlock();
+    await moveToNextBlock();
+    await this.testDeFiAdapterForGauge.testClaimRewardTokenCode(pool.pool, this.curveGaugeAdapter.address);
+    console.log("CRV ", await crvInstance.balanceOf(this.testDeFiAdapterForGauge.address));
+    console.log("WMATIC ", await wmaticInstance.balanceOf(this.testDeFiAdapterForGauge.address));
+    // 14. harvest
+
     // 12. Withdraw all lpToken balance
     const calculatedUnderlyingTokenBalanceAfterWithdraw = await gaugeInstance.balanceOf(
       this.testDeFiAdapterForGauge.address,
@@ -140,6 +159,9 @@ export function shouldBehaveLikeCurveGaugeAdapter(token: string, pool: GaugeItem
       this.testDeFiAdapterForGauge.address,
     );
     expect(actualUnderlyingTokenBalanceAfterWithdraw).eq(calculatedUnderlyingTokenBalanceAfterWithdraw);
+    await this.testDeFiAdapterForGauge.testClaimRewardTokenCode(pool.pool, this.curveGaugeAdapter.address);
+    console.log("CRV ", await crvInstance.balanceOf(this.testDeFiAdapterForGauge.address));
+    console.log("WMATIC ", await wmaticInstance.balanceOf(this.testDeFiAdapterForGauge.address));
   });
 }
 

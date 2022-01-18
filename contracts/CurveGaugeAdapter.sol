@@ -311,7 +311,7 @@ contract CurveGaugeAdapter is AdapterModifiersBase, IAdapterV2, IAdapterHarvestR
     /**
      * @inheritdoc IAdapterHarvestReward
      */
-    function getClaimRewardTokenCode(address payable, address _liquidityPool)
+    function getClaimRewardTokenCode(address payable _vault, address _liquidityPool)
         external
         pure
         override
@@ -319,7 +319,7 @@ contract CurveGaugeAdapter is AdapterModifiersBase, IAdapterV2, IAdapterHarvestR
     {
         _codes = new bytes[](1);
         // Claim available reward tokens for vault
-        _codes[0] = abi.encode(_liquidityPool, abi.encodeWithSignature("claim_rewards()"));
+        _codes[0] = abi.encode(_liquidityPool, abi.encodeWithSignature("claim_rewards(address)", _vault));
     }
 
     /**

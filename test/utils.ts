@@ -1,4 +1,4 @@
-import { TransactionRequest } from "@ethersproject/providers";
+import { Block, TransactionRequest } from "@ethersproject/providers";
 import hre, { ethers } from "hardhat";
 import { ERC20 } from "../typechain";
 
@@ -73,4 +73,15 @@ export async function setTokenBalanceInStorage(token: ERC20, account: string, am
           .padStart(64, "0"),
     );
   }
+}
+
+export async function moveToNextBlock(): Promise<void> {
+  const blockNumber: number = await hre.ethers.provider.getBlockNumber();
+  const block: Block = await hre.ethers.provider.getBlock(blockNumber);
+  await moveToSpecificBlock(block.timestamp);
+}
+
+export async function moveToSpecificBlock(timestamp: number): Promise<void> {
+  await hre.network.provider.send("evm_setNextBlockTimestamp", [timestamp + 1]);
+  await hre.network.provider.send("evm_mine");
 }
