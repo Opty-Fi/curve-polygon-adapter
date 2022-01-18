@@ -44,13 +44,13 @@ export function shouldBehaveLikeCurveFactoryMetapoolAdapter(token: string, pool:
       pool.lpToken,
     );
     // 2. Pool value
-    // const actualPoolValue = await this.curveFactoryMetapoolAdapter.getPoolValue(
-    //   pool.pool,
-    //   ethers.constants.AddressZero,
-    // );
-    // const _virtualPrice = await curve2StableSwapMetapoolFactoryInstance.get_virtual_price();
-    // const expectedPoolValue = _virtualPrice.mul(_totalSupply).div(BigNumber.from("10").pow("18"));
-    // expect(actualPoolValue).to.eq(expectedPoolValue);
+    const actualPoolValue = await this.curveFactoryMetapoolAdapter.getPoolValue(
+      pool.pool,
+      ethers.constants.AddressZero,
+    );
+    const _virtualPrice = await curve2StableSwapMetapoolFactoryInstance.get_virtual_price();
+    const expectedPoolValue = _virtualPrice.mul(_totalSupply).div(BigNumber.from("10").pow("18"));
+    expect(actualPoolValue).to.eq(expectedPoolValue);
     // ============================================
     // let calculatedlpTokenAmount: BigNumber = BigNumber.from(0);
     // if (_nTokens.eq(BigNumber.from("3")) && pool.tokenIndexes[0] == "0") {
