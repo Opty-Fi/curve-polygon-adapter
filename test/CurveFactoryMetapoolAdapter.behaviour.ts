@@ -3,7 +3,6 @@ import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { getAddress } from "ethers/lib/utils";
 import hre, { ethers } from "hardhat";
-import BN from "bignumber.js";
 import { ICurve2StableSwapMetapoolFactory } from "../typechain";
 import { ICurve3StableSwapMetapoolFactory } from "../typechain/ICurve3StableSwapMetapoolFactory";
 import { ICurve4StableSwapMetapoolFactory } from "../typechain/ICurve4StableSwapMetapoolFactory";
@@ -89,9 +88,9 @@ export function shouldBehaveLikeCurveFactoryMetapoolAdapter(token: string, pool:
     const _actualAmount: BigNumber = balanceOfUnderlyingTokenInTestDefiAdapter.mul(
       BigNumber.from("10").pow(BigNumber.from(18).sub(underlyingTokenDecimals)),
     );
-    const _limit = new BN(actualPoolValue.mul(BigNumber.from("10000")).toString()).div(new BN("10000"));
-    const _actualDepositAmount = _actualAmount.gt(BigNumber.from(_limit.toString()))
-      ? _limit.div(new BN("10").pow(new BN("18").minus(new BN(underlyingTokenDecimals))))
+    const _limit = actualPoolValue.mul(BigNumber.from("10000")).div(BigNumber.from("10000"));
+    const _actualDepositAmount = _actualAmount.gt(_limit)
+      ? _limit.div(BigNumber.from("10").pow(BigNumber.from("18").sub(BigNumber.from(underlyingTokenDecimals))))
       : balanceOfUnderlyingTokenInTestDefiAdapter;
     if (_nTokens.eq(BigNumber.from("3")) && pool.tokenIndexes[0] == "0") {
       calculatedlpTokenAmount = await curve3StableSwapMetapoolFactoryInstance.calc_token_amount(
