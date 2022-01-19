@@ -102,7 +102,8 @@ contract CurveMetapoolFactoryAdapter is AdapterInvestLimitBase, IAdapter {
                     "remove_liquidity_one_coin(uint256,int128,uint256)",
                     _amount,
                     _getTokenIndex(_liquidityPool, _underlyingToken),
-                    (getSomeAmountInToken(_underlyingToken, _liquidityPool, _amount) * 95) / 100
+                    0
+                    // (getSomeAmountInToken(_underlyingToken, _liquidityPool, _amount) * 95) / 100
                 )
             );
         }

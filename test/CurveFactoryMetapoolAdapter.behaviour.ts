@@ -191,6 +191,10 @@ export function shouldBehaveLikeCurveFactoryMetapoolAdapter(token: string, pool:
     // 11. canStake
     expect(await this.curveFactoryMetapoolAdapter.canStake(ethers.constants.AddressZero)).to.false;
     // 12. Withdraw all lpToken balance
+    if (actuallpTokenBalance.eq(BigNumber.from("0"))) {
+      console.log(`Skipping ${token} as lp token balance is zero`);
+      this.skip();
+    }
     const calculatedUnderlyingTokenBalanceAfterWithdraw =
       await curve2StableSwapMetapoolFactoryInstance.calc_withdraw_one_coin(actuallpTokenBalance, pool.tokenIndexes[0]);
     await this.testDeFiAdapterForMetapoolFactory.testGetWithdrawSomeCodes(
