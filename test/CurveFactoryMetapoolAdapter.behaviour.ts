@@ -1,3 +1,4 @@
+import { legos } from "@optyfi/defi-legos/polygon";
 import { expect } from "chai";
 import { BigNumber } from "ethers";
 import hre, { ethers } from "hardhat";
@@ -15,6 +16,7 @@ export function shouldBehaveLikeCurveFactoryMetapoolAdapter(token: string, pool:
     );
     const _totalSupply = await curve2StableSwapMetapoolFactoryInstance.totalSupply();
     if (!_totalSupply.gt(BigNumber.from("0"))) {
+      console.log("Skipping as total Supply is zero");
       this.skip();
     }
     // underlying token instance
@@ -33,7 +35,23 @@ export function shouldBehaveLikeCurveFactoryMetapoolAdapter(token: string, pool:
     const lpTokenInstance = await hre.ethers.getContractAt("ERC20", pool.lpToken);
 
     // fund the testDefiAdapter with underlying tokens
-    await setTokenBalanceInStorage(underlyingTokenInstance, this.testDeFiAdapterForMetapoolFactory.address, "2000");
+    if (pool.tokens[0] == legos.tokens.MOUSD) {
+      await hre.network.provider.request({
+        method: "hardhat_impersonateAccount",
+        params: ["0x6e88b0b85f26fb5b207f68a2a4491a1cdf7b9279"],
+      });
+      await this.signers.alice.sendTransaction({
+        to: "0x6e88b0b85f26fb5b207f68a2a4491a1cdf7b9279",
+        value: BigNumber.from("10").mul(BigNumber.from("10").pow("18")),
+      });
+      const signer = await hre.ethers.getSigner("0x6e88b0b85f26fb5b207f68a2a4491a1cdf7b9279");
+      await underlyingTokenInstance
+        .connect(signer)
+        .transfer(this.testDeFiAdapterForMetapoolFactory.address, "2000000000000000000000");
+    }
+    {
+      await setTokenBalanceInStorage(underlyingTokenInstance, this.testDeFiAdapterForMetapoolFactory.address, "2000");
+    }
 
     const balanceOfUnderlyingTokenInTestDefiAdapter = await underlyingTokenInstance.balanceOf(
       this.testDeFiAdapterForMetapoolFactory.address,
@@ -53,6 +71,7 @@ export function shouldBehaveLikeCurveFactoryMetapoolAdapter(token: string, pool:
       const expectedPoolValue = _virtualPrice.mul(_totalSupply).div(BigNumber.from("10").pow("18"));
       expect(actualPoolValue).to.eq(expectedPoolValue);
     } catch (error) {
+      console.log("Skipping as getPoolValue is throwing error");
       this.skip();
     }
 
