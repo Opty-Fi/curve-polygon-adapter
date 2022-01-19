@@ -50,7 +50,16 @@ export function shouldBehaveLikeCurveFactoryMetapoolAdapter(token: string, pool:
         .connect(signer)
         .transfer(this.testDeFiAdapterForMetapoolFactory.address, "2000000000000000000000");
     } else {
-      await setTokenBalanceInStorage(underlyingTokenInstance, this.testDeFiAdapterForMetapoolFactory.address, "2000");
+      if (
+        pool.tokens[0] == legos.tokens.CRV ||
+        pool.tokens[0] == legos.tokens.AMDAI ||
+        pool.tokens[0] == legos.tokens.RENUSDC ||
+        pool.tokens[0] == legos.tokens.LAMBO
+      ) {
+        await setTokenBalanceInStorage(underlyingTokenInstance, this.testDeFiAdapterForMetapoolFactory.address, "20");
+      } else {
+        await setTokenBalanceInStorage(underlyingTokenInstance, this.testDeFiAdapterForMetapoolFactory.address, "2000");
+      }
     }
 
     const balanceOfUnderlyingTokenInTestDefiAdapter = await underlyingTokenInstance.balanceOf(
@@ -135,6 +144,7 @@ export function shouldBehaveLikeCurveFactoryMetapoolAdapter(token: string, pool:
       ).to.eq(calculatedlpTokenAmount);
     } catch (error) {
       console.error(`skipping ${token} as it throws error`);
+      this.skip();
     }
   });
 }
