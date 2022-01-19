@@ -247,7 +247,7 @@ contract CurveMetapoolFactoryAdapter is AdapterInvestLimitBase, IAdapter {
         uint256 _liquidityPoolTokenBalance = getLiquidityPoolTokenBalance(_vault, address(0), _liquidityPool);
         uint256 _balanceInToken = getAllAmountInToken(_vault, _underlyingToken, _liquidityPool);
         // can have unintentional rounding errors
-        return ((_liquidityPoolTokenBalance * _redeemAmount) / _balanceInToken) + 1;
+        return _balanceInToken == 0 ? 0 : ((_liquidityPoolTokenBalance * _redeemAmount) / _balanceInToken) + 1;
     }
 
     /**
