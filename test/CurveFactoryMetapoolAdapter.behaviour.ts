@@ -48,7 +48,7 @@ export function shouldBehaveLikeCurveFactoryMetapoolAdapter(token: string, pool:
       const signer = await hre.ethers.getSigner("0x6e88b0b85f26fb5b207f68a2a4491a1cdf7b9279");
       await underlyingTokenInstance
         .connect(signer)
-        .transfer(this.testDeFiAdapterForMetapoolFactory.address, "2000000000000000000000");
+        .transfer(this.testDeFiAdapterForMetapoolFactory.address, "20000000000000000000");
     } else {
       if (pool.tokens[0] == legos.tokens.LAMBO) {
         await setTokenBalanceInStorage(underlyingTokenInstance, this.testDeFiAdapterForMetapoolFactory.address, "2");
@@ -59,7 +59,7 @@ export function shouldBehaveLikeCurveFactoryMetapoolAdapter(token: string, pool:
       ) {
         await setTokenBalanceInStorage(underlyingTokenInstance, this.testDeFiAdapterForMetapoolFactory.address, "20");
       } else {
-        await setTokenBalanceInStorage(underlyingTokenInstance, this.testDeFiAdapterForMetapoolFactory.address, "2000");
+        await setTokenBalanceInStorage(underlyingTokenInstance, this.testDeFiAdapterForMetapoolFactory.address, "200");
       }
     }
 
@@ -173,8 +173,8 @@ export function shouldBehaveLikeCurveFactoryMetapoolAdapter(token: string, pool:
     );
     expect(expectedBalanceOfUnderlyingTokenInTestDefiAdapterAfterDeposit).to.closeTo(
       balanceOfUnderlyingTokenInTestDefiAdapterAfterDeposit,
-      BigNumber.from("3")
-        .mul(BigNumber.from("10").pow(Math.ceil(underlyingTokenDecimals / 2)))
+      BigNumber.from("9")
+        .mul(BigNumber.from("10").pow(Math.ceil(underlyingTokenDecimals / 1.5)))
         .toNumber(),
     );
   });
