@@ -183,35 +183,33 @@ export function shouldBehaveLikeCurveFactoryMetapoolAdapter(token: string, pool:
         .toNumber(),
     );
 
-    // // 10. getRewardToken
-    // expect(await this.curveStableSwapAdapter.getRewardToken(ethers.constants.AddressZero)).to.eq(
-    //   ethers.constants.AddressZero,
-    // );
+    // 10. getRewardToken
+    expect(await this.curveFactoryMetapoolAdapter.getRewardToken(ethers.constants.AddressZero)).to.eq(
+      ethers.constants.AddressZero,
+    );
 
-    // // 11. canStake
-    // expect(await this.curveStableSwapAdapter.canStake(ethers.constants.AddressZero)).to.false;
-    // // 12. Withdraw all lpToken balance
-    // const calculatedUnderlyingTokenBalanceAfterWithdraw = await stableSwap3Instance.calc_withdraw_one_coin(
-    //   actuallpTokenBalance,
-    //   pool.tokenIndexes[0],
-    // );
-    // await this.testDeFiAdapterForStableSwap.testGetWithdrawSomeCodes(
-    //   pool.tokens[0],
-    //   pool.pool,
-    //   this.curveStableSwapAdapter.address,
-    //   actuallpTokenBalance,
-    // );
-    // const actuallpTokenBalanceAfterWithdraw = await this.curveStableSwapAdapter.getLiquidityPoolTokenBalance(
-    //   this.testDeFiAdapterForStableSwap.address,
-    //   hre.ethers.constants.AddressZero,
-    //   pool.pool,
-    // );
-    // expect(actuallpTokenBalanceAfterWithdraw).to.eq(0);
-    // const actualUnderlyingTokenBalanceAfterWithdraw = await underlyingTokenInstance.balanceOf(
-    //   this.testDeFiAdapterForStableSwap.address,
-    // );
-    // expect(actualUnderlyingTokenBalanceAfterWithdraw).gte(
-    //   calculatedUnderlyingTokenBalanceAfterWithdraw.mul(95).div(100),
-    // );
+    // 11. canStake
+    expect(await this.curveFactoryMetapoolAdapter.canStake(ethers.constants.AddressZero)).to.false;
+    // 12. Withdraw all lpToken balance
+    const calculatedUnderlyingTokenBalanceAfterWithdraw =
+      await curve2StableSwapMetapoolFactoryInstance.calc_withdraw_one_coin(actuallpTokenBalance, pool.tokenIndexes[0]);
+    await this.testDeFiAdapterForMetapoolFactory.testGetWithdrawSomeCodes(
+      pool.tokens[0],
+      pool.pool,
+      this.curveFactoryMetapoolAdapter.address,
+      actuallpTokenBalance,
+    );
+    const actuallpTokenBalanceAfterWithdraw = await this.curveFactoryMetapoolAdapter.getLiquidityPoolTokenBalance(
+      this.testDeFiAdapterForMetapoolFactory.address,
+      hre.ethers.constants.AddressZero,
+      pool.pool,
+    );
+    expect(actuallpTokenBalanceAfterWithdraw).to.eq(0);
+    const actualUnderlyingTokenBalanceAfterWithdraw = await underlyingTokenInstance.balanceOf(
+      this.testDeFiAdapterForMetapoolFactory.address,
+    );
+    expect(actualUnderlyingTokenBalanceAfterWithdraw).gte(
+      calculatedUnderlyingTokenBalanceAfterWithdraw.mul(95).div(100),
+    );
   });
 }
