@@ -183,6 +183,66 @@ export function shouldBehaveLikeCurveFactoryMetapoolAdapter(token: string, pool:
         .toNumber(),
     );
 
+    // 6. all amount in token
+    const expectedAllAmountInToken = await curve2StableSwapMetapoolFactoryInstance.calc_withdraw_one_coin(
+      actuallpTokenBalance,
+      pool.tokenIndexes[0],
+    );
+    const actualAllAmountInToken = await this.curveFactoryMetapoolAdapter.getAllAmountInToken(
+      this.testDeFiAdapterForMetapoolFactory.address,
+      underlyingTokenInstance.address,
+      pool.pool,
+    );
+    expect(actualAllAmountInToken).to.eq(expectedAllAmountInToken);
+
+    // 7. some amount in token
+    const expectedSomeAmountInToken = await curve2StableSwapMetapoolFactoryInstance.calc_withdraw_one_coin(
+      actuallpTokenBalance.mul(25).div(100),
+      pool.tokenIndexes[0],
+    );
+    const actualSomeAmountInToken = await this.curveFactoryMetapoolAdapter.getSomeAmountInToken(
+      underlyingTokenInstance.address,
+      pool.pool,
+      actuallpTokenBalance.mul(25).div(100),
+    );
+    expect(actualSomeAmountInToken).to.eq(expectedSomeAmountInToken);
+
+    // 8. calculateRedeemableLPTokenAmount
+    expect(
+      await this.curveFactoryMetapoolAdapter.calculateRedeemableLPTokenAmount(
+        this.testDeFiAdapterForMetapoolFactory.address,
+        underlyingTokenInstance.address,
+        pool.pool,
+        actualAllAmountInToken,
+      ),
+    ).to.eq(BigNumber.from(actuallpTokenBalance.mul(actualAllAmountInToken).div(actualAllAmountInToken)).add("1"));
+
+    // 9. isRedeemableAmountSufficient
+    expect(
+      await this.curveFactoryMetapoolAdapter.isRedeemableAmountSufficient(
+        this.testDeFiAdapterForMetapoolFactory.address,
+        underlyingTokenInstance.address,
+        pool.pool,
+        actualAllAmountInToken,
+      ),
+    ).to.be.true;
+    expect(
+      await this.curveFactoryMetapoolAdapter.isRedeemableAmountSufficient(
+        this.testDeFiAdapterForMetapoolFactory.address,
+        underlyingTokenInstance.address,
+        pool.pool,
+        actualSomeAmountInToken,
+      ),
+    ).to.be.true;
+    expect(
+      await this.curveFactoryMetapoolAdapter.isRedeemableAmountSufficient(
+        this.testDeFiAdapterForMetapoolFactory.address,
+        underlyingTokenInstance.address,
+        pool.pool,
+        actualAllAmountInToken.add(BigNumber.from("3").pow(underlyingTokenDecimals)),
+      ),
+    ).to.be.false;
+
     // 10. getRewardToken
     expect(await this.curveFactoryMetapoolAdapter.getRewardToken(ethers.constants.AddressZero)).to.eq(
       ethers.constants.AddressZero,
