@@ -1,6 +1,7 @@
 import { legos } from "@optyfi/defi-legos/polygon";
 import { expect } from "chai";
 import { BigNumber } from "ethers";
+import { getAddress } from "ethers/lib/utils";
 import hre, { ethers } from "hardhat";
 import { ICurve2StableSwapMetapoolFactory } from "../typechain";
 import { ICurve3StableSwapMetapoolFactory } from "../typechain/ICurve3StableSwapMetapoolFactory";
@@ -16,7 +17,7 @@ export function shouldBehaveLikeCurveFactoryMetapoolAdapter(token: string, pool:
     );
     const _totalSupply = await curve2StableSwapMetapoolFactoryInstance.totalSupply();
     if (!_totalSupply.gt(BigNumber.from("0"))) {
-      console.log("Skipping as total Supply is zero");
+      console.log(`Skipping ${token} as total Supply is zero`);
       this.skip();
     }
     // underlying token instance
@@ -35,7 +36,7 @@ export function shouldBehaveLikeCurveFactoryMetapoolAdapter(token: string, pool:
     const lpTokenInstance = await hre.ethers.getContractAt("ERC20", pool.lpToken);
 
     // fund the testDefiAdapter with underlying tokens
-    if (pool.tokens[0] == legos.tokens.MOUSD) {
+    if (getAddress(pool.tokens[0]) == getAddress(legos.tokens.MOUSD)) {
       await hre.network.provider.request({
         method: "hardhat_impersonateAccount",
         params: ["0x6e88b0b85f26fb5b207f68a2a4491a1cdf7b9279"],
@@ -48,8 +49,7 @@ export function shouldBehaveLikeCurveFactoryMetapoolAdapter(token: string, pool:
       await underlyingTokenInstance
         .connect(signer)
         .transfer(this.testDeFiAdapterForMetapoolFactory.address, "2000000000000000000000");
-    }
-    {
+    } else {
       await setTokenBalanceInStorage(underlyingTokenInstance, this.testDeFiAdapterForMetapoolFactory.address, "2000");
     }
 
@@ -71,7 +71,7 @@ export function shouldBehaveLikeCurveFactoryMetapoolAdapter(token: string, pool:
       const expectedPoolValue = _virtualPrice.mul(_totalSupply).div(BigNumber.from("10").pow("18"));
       expect(actualPoolValue).to.eq(expectedPoolValue);
     } catch (error) {
-      console.log("Skipping as getPoolValue is throwing error");
+      console.log(`Skipping ${token} as getPoolValue is throwing error`);
       this.skip();
     }
 
@@ -134,7 +134,7 @@ export function shouldBehaveLikeCurveFactoryMetapoolAdapter(token: string, pool:
         ),
       ).to.eq(calculatedlpTokenAmount);
     } catch (error) {
-      console.error(error);
+      console.error(`skipping ${token} as it throws error`);
     }
   });
 }
