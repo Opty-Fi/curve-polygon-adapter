@@ -1,4 +1,5 @@
 import { legos } from "@optyfi/defi-legos/polygon";
+import WMATIC_ABI from "@optyfi/defi-legos/interfaces/misc/abi/WETH.json";
 import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { getAddress } from "ethers/lib/utils";
@@ -52,6 +53,12 @@ export function shouldBehaveLikeCurveFactoryMetapoolAdapter(token: string, pool:
     } else {
       if (pool.tokens[0] == legos.tokens.LAMBO) {
         await setTokenBalanceInStorage(underlyingTokenInstance, this.testDeFiAdapterForMetapoolFactory.address, "2");
+      } else if (pool.tokens[0] == legos.tokens.WMATIC) {
+        const wmaticInstance = await hre.ethers.getContractAt(WMATIC_ABI, legos.tokens.WMATIC);
+        await wmaticInstance.connect(this.signers.alice).deposit({ value: "20000000000000000000" });
+        await wmaticInstance
+          .connect(this.signers.alice)
+          .transfer(this.testDeFiAdapterForMetapoolFactory.address, "20000000000000000000");
       } else if (
         pool.tokens[0] == legos.tokens.CRV ||
         pool.tokens[0] == legos.tokens.AMDAI ||
@@ -140,7 +147,7 @@ export function shouldBehaveLikeCurveFactoryMetapoolAdapter(token: string, pool:
         );
       }
     } catch (error) {
-      console.log(`skipping ${token} as calc_token_amount throw error`);
+      console.log(`Skipping ${token} as calc_token_amount throw error`);
       this.skip();
     }
     // ===========================================================
@@ -152,6 +159,7 @@ export function shouldBehaveLikeCurveFactoryMetapoolAdapter(token: string, pool:
         _actualDepositAmount.toString(),
       ),
     ).to.eq(calculatedlpTokenAmount);
+
     // 4. Deposit All underlying tokens
     await this.testDeFiAdapterForMetapoolFactory.testGetDepositSomeCodes(
       underlyingTokenInstance.address,
