@@ -4,7 +4,7 @@ pragma solidity =0.8.11;
 
 //  helper contracts
 import "./utils/AdapterInvestLimitBase.sol";
-import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { ERC20 } from "@openzeppelin/contracts-0.8.x/token/ERC20/ERC20.sol";
 
 // interfaces
 import { IAdapter } from "@optyfi/defi-legos/interfaces/defiAdapters/contracts/IAdapter.sol";
